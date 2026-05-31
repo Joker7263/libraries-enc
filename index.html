@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>IPTV Live • Working Channels</title>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.14.28/controls.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --accent: #61dafb;
+      --accent-glow: rgba(97,218,251,0.4);
+      --bg: #0a0c10;
+      --card-bg: #1c212a;
+      --glass: rgba(255,255,255,0.05);
+      --text-dim: #a0a0a0;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: white;
+      overflow: hidden;
+      height: 100vh;
+    }
+    #video-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      background: black;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    #audio-fallback {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      z-index: 2;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #0a0c10, #030405);
+    }
+    #audio-fallback h2 { font-size: 2rem; margin: 0; }
+    #audio-fallback p { color: var(--accent); font-size: 1.2rem; }
+    #ui-layer {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: radial-gradient(circle at 20% 30%, rgba(10,12,16,0.94) 0%, rgba(10,12,16,0.98) 100%);
+      backdrop-filter: blur(2px);
+      transition: opacity 0.3s ease, visibility 0.3s;
+      padding: 20px 30px;
+    }
+    #ui-layer.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #header-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      color: var(--text-dim);
+    }
+    #channel-count {
+      background: var(--glass);
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 0.85rem;
+    }
+    #clock {
+      background: var(--glass);
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 0.85rem;
+    }
+    #search-section {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    #search-box {
+      width: 70%;
+      max-width: 500px;
+      background: rgba(20,25,35,0.9);
+      border: 2px solid #2a2f3a;
+      border-radius: 60px;
+      padding: 12px 24px;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+      text-align: center;
+    }
+    #search-box:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    #channel-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 18px;
+      overflow-y: auto;
+      padding: 10px 5px 20px 5px;
+      align-content: start;
+    }
+    #channel-grid::-webkit-scrollbar { width: 5px; }
+    #channel-grid::-webkit-scrollbar-track { background: #1a1f28; border-radius: 8px; }
+    #channel-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 8px; }
+    .channel-card {
+      background: var(--card-bg);
+      padding: 16px 10px;
+      border-radius: 20px;
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .channel-card.filtered-out { display: none; }
+    .channel-card:focus-visible {
+      border-color: var(--accent);
+      transform: scale(1.02);
+      background: #2a313e;
+    }
+    .channel-card:hover {
+      background: #252d3a;
+      transform: translateY(-3px);
+    }
+    .logo-box {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.25);
+      border-radius: 18px;
+    }
+    .channel-card img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
+    .letter-fallback {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--accent);
+    }
+    .channel-card span {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .custom-card {
+      background: linear-gradient(135deg, #2b2f3a, #1e222b);
+      border: 1px solid rgba(255,215,0,0.3);
+    }
+    #loader {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 200;
+      display: none;
+      background: rgba(0,0,0,0.8);
+      padding: 20px;
+      border-radius: 60px;
+    }
+    .spinner {
+      width: 45px;
+      height: 45px;
+      border: 4px solid #2a2f3a;
+      border-top: 4px solid var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .error-toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #dc2626;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 40px;
+      font-size: 0.85rem;
+      z-index: 300;
+      display: none;
+    }
+    .youtube-badge {
+      font-size: 0.7rem;
+      background: #ff0000;
+      border-radius: 12px;
+      padding: 2px 8px;
+      margin-top: 5px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+<div id="loader"><div class="spinner"></div></div>
+<div class="error-toast" id="errorToast">⚠️ Stream unavailable</div>
+<div id="video-container" data-shaka-player-container>
+  <video id="video" autoplay playsinline></video>
+  <div id="audio-fallback">
+    <h2 id="fallback-name">Station</h2>
+    <p>🎧 Audio Only Mode</p>
+  </div>
+</div>
+<div id="ui-layer">
+  <div id="header-info">
+    <span id="channel-count">📡 Loading...</span>
+    <span id="clock">--:--</span>
+  </div>
+  <div id="search-section">
+    <input type="text" id="search-box" placeholder="🔍 Search channels..." autocomplete="off">
+  </div>
+  <div id="channel-grid"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.14.28/shaka-player.ui.min.js"></script>
+<script>
+  // ============ WORKING CHANNELS ONLY (No expired tokens) ============
+  const WORKING_CHANNELS = [
+    // YouTube Channels
+    { name: "Kapamilya Online Live", type: "youtube", streamUrl: "https://www.youtube.com/@abscbnentertainment/live", logoLocal: null },
+    { name: "Kapuso Stream", type: "youtube", streamUrl: "https://www.youtube.com/@gmanetwork/live", logoLocal: null },
+    { name: "DZMM Teleradyo Live", type: "youtube", streamUrl: "https://www.youtube.com/@dzmmteleradyo_mspc/live", logoLocal: null },
+    { name: "Sky News", type: "youtube", streamUrl: "https://www.youtube.com/@SkyNews/live", logoLocal: null },
+    { name: "Euronews", type: "youtube", streamUrl: "https://www.youtube.com/@euronews/live", logoLocal: null },
+    { name: "The K-Pop", type: "youtube", streamUrl: "https://www.youtube.com/watch?v=JVocS7Yftw8", logoLocal: null },
+    
+    // Working HLS / M3U8 streams
+    { name: "AsianCrush", type: "hls", streamUrl: "https://linear-900.frequency.stream/dist/cineverse/900/hls/master/playlist.m3u8", logoLocal: null },
+    { name: "Game Show Network", type: "hls", streamUrl: "https://a-cdn.klowdtv.com/live2/gsn_720p/chunks.m3u8", logoLocal: null },
+    { name: "Game Show Central", type: "hls", streamUrl: "https://dbrb49pjoymg4.cloudfront.net/10001/99991750/hls/playlist.m3u8", logoLocal: null },
+    { name: "Dove Channel", type: "hls", streamUrl: "https://linear-896.frequency.stream/dist/cineverse/896/hls/master/playlist.m3u8", logoLocal: null },
+    { name: "Horror by ALTER", type: "hls", streamUrl: "https://live-manifest.production-public.tubi.io/live/c12f35bf-6465-4e44-b5f7-04ec645689c7/playlist.m3u8", logoLocal: null },
+    { name: "FilmRise Horror", type: "hls", streamUrl: "https://live-manifest.production-public.tubi.io/live/4c82889c-7b9c-4f06-bc61-8f18fd23a49a/playlist.m3u8", logoLocal: null },
+    { name: "ION", type: "hls", streamUrl: "https://cdn-uw2-prod.tsv2.amagi.tv/linear/amg01438-ewscrippscompan-ion-tablo/playlist.m3u8", logoLocal: null },
+    { name: "Miramax Movie Channel", type: "hls", streamUrl: "https://linear-798.frequency.stream/mt/plex/798/hls/master/playlist.m3u8", logoLocal: null },
+    { name: "Stories by AMC", type: "hls", streamUrl: "https://amc-amcpresents-1-us.plex.wurl.tv/playlist.m3u8", logoLocal: null },
+    { name: "MovieSphere", type: "hls", streamUrl: "https://amg00353-lionsgatestudio-moviesphere-xumo-zh5u0.amagi.tv/playlist.m3u8", logoLocal: null },
+    { name: "Sony Movies", type: "hls", streamUrl: "https://a-cdn.klowdtv.com/live1/smc_720p/chunks.m3u8", logoLocal: null },
+    { name: "Animax", type: "hls", streamUrl: "https://amg02159-amg02159c9-amgplt0352.playout.now3.amagi.tv/ts-eu-w1-n2/playlist/amg02159-amg02159c9-amgplt0352/playlist.m3u8", logoLocal: null },
+    { name: "AniPlus", type: "hls", streamUrl: "https://amg18481-amg18481c1-amgplt0352.playout.now3.amagi.tv/playlist/amg18481-amg18481c1-amgplt0352/playlist.m3u8", logoLocal: null },
+    { name: "Ani-blast", type: "hls", streamUrl: "https://amg19223-amg19223c9-amgplt0352.playout.now3.amagi.tv/playlist/amg19223-amg19223c9-amgplt0352/playlist.m3u8", logoLocal: null },
+    { name: "Anime X HiDive", type: "hls", streamUrl: "https://amc-anime-x-hidive-1-us.tablo.wurl.tv/3000.m3u8", logoLocal: null },
+    { name: "FilmRise Anime", type: "hls", streamUrl: "https://dvu7aia8rjlfm.cloudfront.net/master.m3u8", logoLocal: null },
+    { name: "Retro Crush", type: "hls", streamUrl: "https://linear-899.frequency.stream/dist/cineverse/899/hls/master/playlist.m3u8", logoLocal: null },
+    { name: "Crunchyroll", type: "hls", streamUrl: "https://wurlgameshownetwork.global.transmit.live/hls/68d1741991b992ec0d46bfea/v1/gsn_crunchyroll_1/lg_us/latest/main/hls/playlist.m3u8", logoLocal: null },
+    { name: "ZooMoo", type: "hls", streamUrl: "https://zoomoo-samsungau.amagi.tv/playlist.m3u8", logoLocal: null },
+    { name: "Kartoon Channel!", type: "hls", streamUrl: "https://d34o9l4449wcay.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-90kyowvo7ut9m/kchan.m3u8", logoLocal: null },
+    { name: "Pop", type: "hls", streamUrl: "https://amg01753-amg01753c6-samsung-au-6678.playouts.now.amagi.tv/playlist.m3u8", logoLocal: null },
+    { name: "Wild Earth", type: "hls", streamUrl: "https://wildearth-plex.amagi.tv/masterR1080p.m3u8", logoLocal: null },
+    { name: "Curiosity Now", type: "hls", streamUrl: "https://amg00170-curiositystream-amg00170c3-rakuten-us-2289.playouts.now.amagi.tv/playlist/amg00170-curiositystreamllcfast-curiositynowrow-rakutenus/playlist.m3u8", logoLocal: null },
+    { name: "CGTN Documentary", type: "hls", streamUrl: "https://english-livebkali.cgtn.com/live/doccgtn.m3u8", logoLocal: null },
+    { name: "RT Documentary", type: "hls", streamUrl: "https://rt-rtd.rttv.com/dvr/rtdoc/playlist.m3u8", logoLocal: null },
+    { name: "True History", type: "hls", streamUrl: "https://linear-188.frequency.stream/dist/glewedtv/188/hls/master/playlist.m3u8", logoLocal: null },
+    { name: "Fashion One", type: "hls", streamUrl: "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e2ee6997cb_1/playlist.m3u8", logoLocal: null },
+    { name: "New K-Pop", type: "hls", streamUrl: "https://newidco-newkid-1-eu.xiaomi.wurl.tv/playlist.m3u8", logoLocal: null },
+    { name: "Vevo Pop", type: "hls", streamUrl: "https://amg00056-amg00056c6-rakuten-uk-3235.playouts.now.amagi.tv/playlist.m3u8", logoLocal: null },
+    { name: "Trace Urban", type: "hls", streamUrl: "https://lightning-traceurban-samsungau.amagi.tv/playlist.m3u8", logoLocal: null },
+    { name: "XITE", type: "hls", streamUrl: "https://amg01243-xite-amg01243c31-amagitv-us-7961.playouts.now.amagi.tv/1080p-cc/index.m3u8", logoLocal: null },
+    { name: "XITE 90's Throwback", type: "hls", streamUrl: "https://d284aawtm5vi48.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-fjdfi2br1jtq7/XITE_90s_Throwback.m3u8", logoLocal: null },
+    { name: "Stingray Karaoke", type: "hls", streamUrl: "https://lotus.stingray.com/manifest/karaoke-kar000-montreal/samsungtvplus/c92ba6bd-21aa-39b1-8f4a-8d02bef17886/3291200/manifest.m3u8", logoLocal: null },
+    { name: "CNA", type: "hls", streamUrl: "https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index.m3u8", logoLocal: null },
+    { name: "France 24", type: "hls", streamUrl: "https://amg00106-amg00106c1-samsung-ph-4550.playouts.now.amagi.tv/playlist.m3u8", logoLocal: null },
+    { name: "DW English", type: "hls", streamUrl: "https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8", logoLocal: null },
+    { name: "TRT World", type: "hls", streamUrl: "https://tv-trtworld.medya.trt.com.tr/master.m3u8", logoLocal: null },
+    { name: "WION", type: "hls", streamUrl: "https://d7x8z4yuq42qn.cloudfront.net/index_7.m3u8", logoLocal: null },
+    { name: "Press TV", type: "hls", streamUrl: "https://live.presstv.ir/hls/presstv_5_482/index.m3u8", logoLocal: null },
+    { name: "Times of India", type: "hls", streamUrl: "https://live.sli.ke/live/npnhm84gz9/master.m3u8", logoLocal: null },
+    { name: "Global News", type: "hls", streamUrl: "https://live.corusdigitaldev.com/groupd/live/49a91e7f-1023-430f-8d66-561055f3d0f7/live.isml/live-audio_1=96000-video=2499968.m3u8", logoLocal: null },
+    { name: "CBS News 24/7", type: "hls", streamUrl: "https://dai.google.com/linear/hls/event/Sid4xiTQTkCT1SLu6rjUSQ/master.m3u8", logoLocal: null },
+    { name: "ABC News Live", type: "hls", streamUrl: "https://dbrb49pjoymg4.cloudfront.net/10001/99951517/hls/master.m3u8", logoLocal: null },
+    { name: "NBC News NOW", type: "hls", streamUrl: "https://d4whmvwm0rdvi.cloudfront.net/10007/99991247/hls/master.m3u8", logoLocal: null },
+    { name: "Arirang", type: "hls", streamUrl: "https://amdlive-ch01-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8", logoLocal: null },
+    { name: "Mono 29", type: "hls", streamUrl: "https://monomax-uiripn.cdn.byteark.com/plain/th/1080p/index.m3u8", logoLocal: null },
+    { name: "EWTN", type: "hls", streamUrl: "https://cdn3.wowza.com/1/QmVNUVhTNTZSS3Uz/YWQ0aHpi/hls/live/playlist.m3u8", logoLocal: null },
+    { name: "Hope Channel Philippines", type: "hls", streamUrl: "https://cdn-kr-icn.becdn.net/hcorg_ROeXKL3HV6a/s/jsl_7A1swL7Fhlh/master.m3u8", logoLocal: null },
+    { name: "Tap Sports", type: "hls", streamUrl: "https://amg19223-amg19223c2-amgplt0351.playout.now3.amagi.tv/playlist/amg19223-amg19223c2-amgplt0351/playlist.m3u8", logoLocal: null },
+    { name: "Fox Sports", type: "hls", streamUrl: "https://d1jzu95oc8fgt3.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-zyqcok4bm0lgq/FOX_Sports.m3u8", logoLocal: null },
+    { name: "DAZN Combat", type: "hls", streamUrl: "https://dazn-combat-rakuten.amagi.tv/hls/amagi_hls_data_rakutenAA-dazn-combat-rakuten/CDN/master.m3u8", logoLocal: null },
+    { name: "DAZN Ringside", type: "hls", streamUrl: "https://aegis-cloudfront-1.tubi.video/bfad29e2-5bee-44f3-8256-127324e8b106/playlist.m3u8", logoLocal: null },
+    { name: "Fight+", type: "hls", streamUrl: "https://amg19223-amg19223c6-amgplt0351.playout.now3.amagi.tv/playlist/amg19223-amg19223c6-amgplt0351/playlist.m3u8", logoLocal: null },
+    { name: "TNA Wrestling", type: "hls", streamUrl: "https://amg00966-amg00966c1-freelivesports-emea-7712.playouts.now.amagi.tv/playlist/amg00966-anthem-tnawrestling-freelivesportsemea/playlist.m3u8", logoLocal: null },
+    { name: "FIFA+", type: "hls", streamUrl: "https://ca333c39.wurl.com/v1/sysdata_s_p_a_fifa_6/ohlscdn_us/latest/main/hls/playlist.m3u8", logoLocal: null },
+    { name: "Tennis Channel", type: "hls", streamUrl: "https://cdn-uw2-prod.tsv2.amagi.tv/linear/amg01444-tennischannelth-tennischnlintl-lggb/playlist.m3u8", logoLocal: null },
+    { name: "Tennis+", type: "hls", streamUrl: "https://amg01935-amg01935c1-amgplt0352.playout.now3.amagi.tv/playlist/amg01935-amg01935c1-amgplt0352/playlist.m3u8", logoLocal: null },
+    { name: "Pickle TV", type: "hls", streamUrl: "https://fce26776.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/U3BvcnRzVHJpYmFsLWV1X1BpY2tsZVRWX0hMUw/playlist.m3u8", logoLocal: null },
+    { name: "NASCAR", type: "hls", streamUrl: "https://amg00115-amg00115c1-freelivesports-emea-11215.playouts.now.amagi.tv/ts-eu-w1-n2/playlist/amg00115-nascar-nascar-freelivesportsemea/playlist.m3u8", logoLocal: null },
+    { name: "MTRSPT1", type: "hls", streamUrl: "https://cdn-uw2-prod.tsv2.amagi.tv/linear/amg02873-kravemedia-mtrspt1-sportstribal/playlist.m3u8", logoLocal: null },
+    { name: "Billiard TV", type: "hls", streamUrl: "https://1621590671.rsc.cdn77.org/HLS/BILLIARDTV_SCTE.m3u8", logoLocal: null },
+    { name: "World Poker Tour", type: "hls", streamUrl: "https://dtqutq7lmcchv.cloudfront.net/10001/99991317/hls/playlist.m3u8", logoLocal: null },
+    { name: "Redbull TV", type: "hls", streamUrl: "https://jmp2.uk/rok-c5e8a74546771de365652cd053f73351.m3u8", logoLocal: null },
+    { name: "X Games TV", type: "hls", streamUrl: "https://jmp2.uk/rok-0128b5f756acf1e1c488509fd76b0a61.m3u8", logoLocal: null },
+    { name: "BeIN Sports XTRA", type: "hls", streamUrl: "https://bein-beinxtrasports-firetv.amagi.tv/playlist.m3u8", logoLocal: null },
+    { name: "Outdoor", type: "hls", streamUrl: "https://cdn-apse1-prod.tsv2.amagi.tv/linear/amg00718-outdoorchannela-outdoortvnz-samsungnz/playlist.m3u8", logoLocal: null },
+    { name: "Tastemade", type: "hls", streamUrl: "https://cdn-uw2-prod.tsv2.amagi.tv/linear/amg00047-tastemade-tastemadefreetv16-tablo/playlist.m3u8", logoLocal: null },
+    { name: "History TV18", type: "hls", streamUrl: "https://raw.githubusercontent.com/amazeyourself/adaptive-streams/refs/heads/main/streams/in/HistoryTV18HD.m3u8", logoLocal: null }
+  ];
+
+  let player, ui;
+  const video = document.getElementById('video');
+  const container = document.getElementById('video-container');
+  const uiLayer = document.getElementById('ui-layer');
+  const loader = document.getElementById('loader');
+  const searchBox = document.getElementById('search-box');
+  const grid = document.getElementById('channel-grid');
+  const fallbackDiv = document.getElementById('audio-fallback');
+  const fallbackName = document.getElementById('fallback-name');
+  const errorToast = document.getElementById('errorToast');
+  let lastFocused = null;
+
+  function showToast(msg) {
+    errorToast.textContent = msg;
+    errorToast.style.display = 'block';
+    setTimeout(() => { errorToast.style.display = 'none'; }, 3000);
+  }
+
+  function toggleUI(show) {
+    if (show) {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      uiLayer.classList.remove('hidden');
+      setTimeout(() => {
+        const target = (lastFocused && document.body.contains(lastFocused)) ? lastFocused : searchBox;
+        target?.focus();
+      }, 50);
+    } else {
+      uiLayer.classList.add('hidden');
+    }
+  }
+
+  async function initShaka() {
+    shaka.polyfill.installAll();
+    if (!shaka.Player.isBrowserSupported()) {
+      alert("Browser not supported");
+      return false;
+    }
+    player = new shaka.Player(video);
+    ui = new shaka.ui.Overlay(player, container, video);
+    ui.configure({
+      controlPanelElements: ['play_pause', 'time_and_duration', 'spacer', 'quality', 'fullscreen'],
+      overflowMenuButtons: ['quality']
+    });
+    player.addEventListener('loaded', () => {
+      fallbackDiv.style.display = player.isAudioOnly() ? 'flex' : 'none';
+    });
+    return true;
+  }
+
+  async function playChannel(channel) {
+    toggleUI(false);
+    fallbackDiv.style.display = 'none';
+    loader.style.display = 'block';
+    fallbackName.textContent = channel.name;
+
+    try {
+      if (channel.type === 'youtube') {
+        loader.style.display = 'none';
+        const confirmOpen = confirm(`"${channel.name}" is a YouTube live stream. Open in YouTube?`);
+        if (confirmOpen) window.open(channel.streamUrl, '_blank');
+        toggleUI(true);
+        return;
+      }
+
+      await player.load(channel.streamUrl);
+      if (container.requestFullscreen) await container.requestFullscreen();
+    } catch (err) {
+      console.error(`Failed: ${channel.name}`, err);
+      showToast(`"${channel.name}" - Stream unavailable`);
+      toggleUI(true);
+    } finally {
+      loader.style.display = 'none';
+    }
+  }
+
+  function renderChannels() {
+    grid.innerHTML = '';
+    
+    const kofi = document.createElement('div');
+    kofi.className = 'channel-card custom-card';
+    kofi.tabIndex = 0;
+    kofi.innerHTML = `<div class="logo-box"><div class="letter-fallback">❤️</div></div><span>Support on Ko-fi</span>`;
+    kofi.onclick = () => window.open('https://ko-fi.com/acevin', '_blank');
+    kofi.onkeydown = (e) => e.key === 'Enter' && kofi.onclick();
+    grid.appendChild(kofi);
+
+    WORKING_CHANNELS.forEach(ch => {
+      const card = document.createElement('div');
+      card.className = 'channel-card';
+      card.tabIndex = 0;
+      card.setAttribute('data-name', ch.name.toLowerCase());
+      const letter = ch.name.charAt(0).toUpperCase();
+      const badge = ch.type === 'youtube' ? '<span class="youtube-badge">▶ YouTube</span>' : '';
+      card.innerHTML = `
+        <div class="logo-box">
+          <div class="letter-fallback">${letter}</div>
+        </div>
+        <span>${ch.name}</span>
+        ${badge}
+      `;
+      card.onclick = async () => {
+        lastFocused = card;
+        await playChannel(ch);
+      };
+      card.onkeydown = (e) => e.key === 'Enter' && card.onclick();
+      grid.appendChild(card);
+    });
+    
+    document.getElementById('channel-count').innerHTML = `📺 ${WORKING_CHANNELS.length} Channels`;
+  }
+
+  function handleSearch(val) {
+    const q = val.toLowerCase();
+    const cards = Array.from(grid.querySelectorAll('.channel-card:not(.custom-card)'));
+    cards.forEach(card => {
+      const name = card.getAttribute('data-name') || '';
+      card.classList.toggle('filtered-out', !name.includes(q));
+    });
+    const visible = cards.filter(c => !c.classList.contains('filtered-out')).length;
+    document.getElementById('channel-count').innerHTML = `📺 ${visible}/${WORKING_CHANNELS.length} Channels`;
+  }
+
+  function startClock() {
+    const update = () => {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+    update();
+    setInterval(update, 1000);
+  }
+
+  function setupNav() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !uiLayer.classList.contains('hidden')) {
+        // do nothing, escape doesn't hide UI in this version
+      }
+      if (uiLayer.classList.contains('hidden')) return;
+      const active = document.activeElement;
+      const allCards = Array.from(grid.querySelectorAll('.channel-card:not(.filtered-out)'));
+      if (active === searchBox && e.key === 'ArrowDown' && allCards.length) {
+        e.preventDefault();
+        allCards[0].focus();
+      } else if (active?.classList?.contains('channel-card')) {
+        const idx = allCards.indexOf(active);
+        if (e.key === 'ArrowLeft' && idx > 0) allCards[idx-1].focus();
+        else if (e.key === 'ArrowRight' && idx < allCards.length-1) allCards[idx+1].focus();
+      }
+    });
+    searchBox.addEventListener('input', (e) => handleSearch(e.target.value));
+  }
+
+  (async () => {
+    await initShaka();
+    renderChannels();
+    toggleUI(true);
+    setupNav();
+    startClock();
+  })();
+</script>
+</body>
+</html>
