@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>IPTV Live · Premium Streams</title>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.14.28/controls.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --accent: #61dafb;
+      --accent-glow: rgba(97, 218, 251, 0.4);
+      --bg: #0a0c10;
+      --card-bg: #1c212a;
+      --glass: rgba(255, 255, 255, 0.05);
+      --text-dim: #a0a0a0;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: white;
+      overflow: hidden;
+      height: 100vh;
+    }
+    #video-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      background: black;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    #audio-fallback {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      z-index: 2;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #0a0c10, #030405);
+    }
+    #audio-fallback h2 { font-size: 2rem; margin: 0; }
+    #audio-fallback p { color: var(--accent); font-size: 1.2rem; }
+    #ui-layer {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: radial-gradient(circle at 20% 30%, rgba(10,12,16,0.94) 0%, rgba(10,12,16,0.98) 100%);
+      backdrop-filter: blur(2px);
+      transition: opacity 0.3s ease, visibility 0.3s;
+      padding: 20px 30px;
+    }
+    #ui-layer.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #header-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      color: var(--text-dim);
+    }
+    #channel-count {
+      background: var(--glass);
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 0.85rem;
+    }
+    #clock {
+      background: var(--glass);
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 0.85rem;
+    }
+    #search-section {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    #search-box {
+      width: 70%;
+      max-width: 500px;
+      background: rgba(20, 25, 35, 0.9);
+      border: 2px solid #2a2f3a;
+      border-radius: 60px;
+      padding: 12px 24px;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+      text-align: center;
+    }
+    #search-box:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    #channel-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 18px;
+      overflow-y: auto;
+      padding: 10px 5px 20px 5px;
+      align-content: start;
+    }
+    #channel-grid::-webkit-scrollbar { width: 5px; }
+    #channel-grid::-webkit-scrollbar-track { background: #1a1f28; border-radius: 8px; }
+    #channel-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 8px; }
+    .channel-card {
+      background: var(--card-bg);
+      padding: 16px 10px;
+      border-radius: 20px;
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .channel-card.filtered-out { display: none; }
+    .channel-card:focus-visible {
+      border-color: var(--accent);
+      transform: scale(1.02);
+      background: #2a313e;
+    }
+    .channel-card:hover {
+      background: #252d3a;
+      transform: translateY(-3px);
+    }
+    .logo-box {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.25);
+      border-radius: 18px;
+    }
+    .channel-card img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
+    .letter-fallback {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--accent);
+    }
+    .channel-card span {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .custom-card {
+      background: linear-gradient(135deg, #2b2f3a, #1e222b);
+      border: 1px solid rgba(255,215,0,0.3);
+    }
+    #loader {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 200;
+      display: none;
+      background: rgba(0,0,0,0.8);
+      padding: 20px;
+      border-radius: 60px;
+    }
+    .spinner {
+      width: 45px;
+      height: 45px;
+      border: 4px solid #2a2f3a;
+      border-top: 4px solid var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .error-toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #dc2626;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 40px;
+      font-size: 0.85rem;
+      z-index: 300;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div id="loader"><div class="spinner"></div></div>
+<div class="error-toast" id="errorToast">⚠️ Stream unavailable</div>
+<div id="video-container" data-shaka-player-container>
+  <video id="video" autoplay playsinline></video>
+  <div id="audio-fallback">
+    <h2 id="fallback-name">Station</h2>
+    <p>🎧 Audio Only Mode</p>
+  </div>
+</div>
+<div id="ui-layer">
+  <div id="header-info">
+    <span id="channel-count">📡 Loading...</span>
+    <span id="clock">--:--</span>
+  </div>
+  <div id="search-section">
+    <input type="text" id="search-box" placeholder="🔍 Search channels..." autocomplete="off">
+  </div>
+  <div id="channel-grid"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.14.28/shaka-player.ui.min.js"></script>
+<script>
+  let player, ui, allChannels = [], lastFocused = null;
+  const videoEl = document.getElementById('video');
+  const container = document.getElementById('video-container');
+  const uiLayer = document.getElementById('ui-layer');
+  const loader = document.getElementById('loader');
+  const searchBox = document.getElementById('search-box');
+  const grid = document.getElementById('channel-grid');
+  const fallbackDiv = document.getElementById('audio-fallback');
+  const fallbackName = document.getElementById('fallback-name');
+  const errorToast = document.getElementById('errorToast');
+
+  function showToast(msg, isError = true) {
+    errorToast.textContent = msg || 'Stream failed';
+    errorToast.style.display = 'block';
+    setTimeout(() => { errorToast.style.display = 'none'; }, 3000);
+  }
+
+  function toggleUI(show) {
+    if (show) {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      uiLayer.classList.remove('hidden');
+      setTimeout(() => {
+        const target = (lastFocused && document.body.contains(lastFocused)) ? lastFocused : searchBox;
+        target?.focus();
+      }, 50);
+      window.history.pushState({ ui: 'visible' }, '');
+    } else {
+      uiLayer.classList.add('hidden');
+    }
+  }
+  window.onpopstate = () => { if (uiLayer.classList.contains('hidden')) toggleUI(true); };
+
+  // YouTube embed fallback helper (for Kapamilya Online Live, Kapuso Stream)
+  function playYouTubeChannel(channelId) {
+    return new Promise((resolve, reject) => {
+      const youtubeRegex = /@([a-zA-Z0-9_]+)/;
+      const match = channelId.match(youtubeRegex);
+      if (!match) return reject('Invalid YouTube handle');
+      const handle = match[1];
+      // Use invidious/YouTube embed workaround - redirect to piped or simple embed
+      const embedUrl = `https://www.youtube.com/embed/live_stream?channel=${handle}`;
+      // For simplicity, we'll open in new tab? No, better load via iframe but Shaka can't. We'll notify.
+      reject(`YouTube live @${handle} - Open in browser? We'll handle via external`);
+    });
+  }
+
+  async function initShaka() {
+    shaka.polyfill.installAll();
+    if (!shaka.Player.isBrowserSupported()) {
+      alert("Browser not supported");
+      return false;
+    }
+    player = new shaka.Player(videoEl);
+    ui = new shaka.ui.Overlay(player, container, videoEl);
+    ui.configure({
+      controlPanelElements: ['play_pause', 'time_and_duration', 'spacer', 'quality', 'fullscreen'],
+      overflowMenuButtons: ['quality']
+    });
+    player.addEventListener('loaded', () => {
+      fallbackDiv.style.display = player.isAudioOnly() ? 'flex' : 'none';
+    });
+    player.addEventListener('error', (e) => {
+      console.warn('Shaka error', e.detail);
+      showToast('Playback error, try another channel');
+    });
+    return true;
+  }
+
+  async function loadChannel(channel) {
+    toggleUI(false);
+    fallbackDiv.style.display = 'none';
+    loader.style.display = 'block';
+    fallbackName.textContent = channel.name;
+
+    // Handle YouTube channels
+    if (channel.type === 'youtube-channel' && channel.streamUrl) {
+      loader.style.display = 'none';
+      showToast(`YouTube: ${channel.name} - Please use external player`, false);
+      toggleUI(true);
+      const confirmOpen = confirm(`"${channel.name}" is a YouTube live stream. Open in YouTube?`);
+      if (confirmOpen) {
+        let url = `https://www.youtube.com/${channel.streamUrl}`;
+        window.open(url, '_blank');
+      }
+      return;
+    }
+
+    let streamUrl = channel.streamUrl;
+    if (!streamUrl) {
+      loader.style.display = 'none';
+      showToast('No stream URL');
+      toggleUI(true);
+      return;
+    }
+
+    try {
+      player.configure({ drm: { clearKeys: {}, servers: {} } });
+      if (channel.drm) {
+        let clearKeys = {};
+        if (channel.drm.keys && Array.isArray(channel.drm.keys)) {
+          channel.drm.keys.forEach(k => { if (k.kid && k.k) clearKeys[k.kid] = k.k; });
+        } else if (typeof channel.drm === 'object' && !channel.drm.keys) {
+          clearKeys = channel.drm;
+        }
+        if (Object.keys(clearKeys).length) player.configure({ drm: { clearKeys } });
+      }
+      if (channel.headers) {
+        player.getNetworkingEngine()?.registerRequestFilter((type, req) => {
+          if (type === shaka.net.NetworkingEngine.RequestType.MANIFEST || type === shaka.net.NetworkingEngine.RequestType.SEGMENT) {
+            Object.entries(channel.headers).forEach(([k, v]) => { req.headers[k] = v; });
+          }
+        });
+      }
+      await player.load(streamUrl);
+      if (container.requestFullscreen) await container.requestFullscreen();
+    } catch (err) {
+      console.error(`Failed ${channel.name}:`, err);
+      let fallbackSuccess = false;
+      if (channel.standbyUrls && channel.standbyUrls.length) {
+        for (let alt of channel.standbyUrls) {
+          try {
+            await player.load(alt);
+            fallbackSuccess = true;
+            break;
+          } catch (e) {}
+        }
+      }
+      if (!fallbackSuccess) {
+        showToast(`"${channel.name}" offline`);
+        toggleUI(true);
+      }
+    } finally {
+      loader.style.display = 'none';
+    }
+  }
+
+  async function fetchChannels() {
+    const url = 'https://raw.githubusercontent.com/Joker7263/Nba-live/refs/heads/main/all%20channel.json';
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Network error');
+      const data = await res.json();
+      let rawChannels = data.channels || [];
+      const channels = rawChannels.filter(c => c.name && (c.streamUrl || c.type === 'youtube-channel')).map(c => ({
+        name: c.name,
+        streamUrl: c.streamUrl || null,
+        logoLocal: c.logoLocal || null,
+        drm: c.drm || null,
+        headers: c.headers || null,
+        type: c.type || 'dash',
+        standbyUrls: c.standbyUrls || []
+      }));
+      return channels;
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  }
+
+  function renderGrid(channels) {
+    grid.innerHTML = '';
+    // Ko-fi card
+    const kofi = document.createElement('div');
+    kofi.className = 'channel-card custom-card';
+    kofi.tabIndex = 0;
+    kofi.innerHTML = `<div class="logo-box"><div class="letter-fallback">❤️</div></div><span>Support on Ko-fi</span>`;
+    kofi.onclick = () => window.open('https://ko-fi.com/acevin', '_blank');
+    kofi.onkeydown = (e) => e.key === 'Enter' && kofi.onclick();
+    grid.appendChild(kofi);
+
+    channels.forEach(ch => {
+      const card = document.createElement('div');
+      card.className = 'channel-card';
+      card.tabIndex = 0;
+      card.setAttribute('data-name', ch.name.toLowerCase());
+      const letter = ch.name.charAt(0).toUpperCase();
+      const logoHtml = `
+        <div class="logo-box">
+          ${ch.logoLocal ? `<img src="${ch.logoLocal}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
+          <div class="letter-fallback" style="${ch.logoLocal ? 'display:none' : 'display:block'}">${letter}</div>
+        </div>
+        <span>${ch.name}</span>
+      `;
+      card.innerHTML = logoHtml;
+      card.onclick = async () => {
+        lastFocused = card;
+        await loadChannel(ch);
+      };
+      card.onkeydown = (e) => e.key === 'Enter' && card.onclick();
+      grid.appendChild(card);
+    });
+    updateCount(channels.length);
+  }
+
+  function updateCount(total) {
+    const visible = Array.from(grid.querySelectorAll('.channel-card:not(.filtered-out)')).filter(c => !c.classList.contains('custom-card')).length;
+    document.getElementById('channel-count').innerHTML = `📺 ${visible}/${total} Channels`;
+  }
+
+  function handleSearch(val) {
+    const q = val.toLowerCase();
+    const cards = Array.from(grid.querySelectorAll('.channel-card:not(.custom-card)'));
+    cards.forEach(card => {
+      const name = card.getAttribute('data-name') || '';
+      card.classList.toggle('filtered-out', !name.includes(q));
+    });
+    const total = cards.length;
+    const visible = cards.filter(c => !c.classList.contains('filtered-out')).length;
+    document.getElementById('channel-count').innerHTML = `📺 ${visible}/${total} Channels`;
+  }
+
+  function startClock() {
+    const update = () => {
+      const now = new Date();
+      document.getElementById('clock').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+    update();
+    setInterval(update, 1000);
+  }
+
+  function setupNav() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key === 'Backspace') {
+        if (uiLayer.classList.contains('hidden')) {
+          e.preventDefault();
+          toggleUI(true);
+        }
+        return;
+      }
+      if (uiLayer.classList.contains('hidden')) return;
+      const active = document.activeElement;
+      const allCards = Array.from(grid.querySelectorAll('.channel-card:not(.filtered-out)'));
+      if (active === searchBox && e.key === 'ArrowDown' && allCards.length) {
+        e.preventDefault();
+        allCards[0].focus();
+      } else if (active.classList?.contains('channel-card')) {
+        const idx = allCards.indexOf(active);
+        if (e.key === 'ArrowLeft' && idx > 0) allCards[idx-1].focus();
+        else if (e.key === 'ArrowRight' && idx < allCards.length-1) allCards[idx+1].focus();
+        else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const prevRow = allCards.filter(c => c.getBoundingClientRect().bottom < active.getBoundingClientRect().top - 5);
+          if (prevRow.length) prevRow[prevRow.length-1].focus();
+          else searchBox.focus();
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const nextRow = allCards.filter(c => c.getBoundingClientRect().top > active.getBoundingClientRect().bottom + 5);
+          if (nextRow.length) nextRow[0].focus();
+        }
+      }
+    });
+    searchBox.addEventListener('input', (e) => handleSearch(e.target.value));
+  }
+
+  (async () => {
+    await initShaka();
+    const channels = await fetchChannels();
+    if (channels.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;margin-top:50px;">⚠️ No channels loaded</div>';
+    } else {
+      allChannels = channels;
+      renderGrid(allChannels);
+    }
+    toggleUI(true);
+    setupNav();
+    startClock();
+  })();
+</script>
+</body>
+</html>
