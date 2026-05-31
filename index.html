@@ -1,0 +1,3259 @@
+
+<html lang="en">
+
+<head>
+
+
+
+<!-- Google tag (gtag.js) -->
+
+
+    
+<meta charset="UTF-8">
+
+    
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    
+<title>
+IPTV Live
+</title>
+
+    
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    
+<link href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.14.28/controls.min.css" rel="stylesheet">
+
+    
+<style>
+
+        :root { 
+            --accent: #61dafb; --bg: #0a0c10; --card-bg: #1c212a;
+            --glass: rgba(255, 255, 255, 0.05); --text-dim: #a0a0a0;
+            --shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        body { 
+            margin: 0; font-family: 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg); color: white; overflow: hidden; height: 100vh; 
+        }
+        #video-container { 
+            position: absolute; top: 0; left: 0; width: 100% height: 100% 
+            z-index: 1; background: black; display: block !important;
+        }
+        video { width: 100% height: 100% object-fit: contain; }
+        #audio-fallback {
+            position: absolute;
+            top: 0; left: 0; width: 100% height: 100%
+            display: none; 
+            z-index: 2;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        #audio-fallback h2 { font-size: 2rem; color: white; margin: 0; }
+        #audio-fallback p { color: var(--accent); font-size: 1.2rem; }
+        #ui-layer { 
+            position: relative; z-index: 10; display: flex; flex-direction: column; height: 100vh; 
+            background: radial-gradient(circle at center, rgba(10,12,16,0.85) 0%, rgba(10,12,16,0.98) 100%);
+            transition: opacity 0.4s ease, visibility 0.4s; padding: 30px 50px; box-sizing: border-box;
+        }
+        #ui-layer.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        #search-section { display: flex; justify-content: center; margin-bottom: 20px; }
+        #search-box { 
+            width: 60% background: var(--glass); border: 2px solid #333; border-radius: 50px; 
+            padding: 15px 30px; color: white; font-size: 1.3rem; outline: none; text-align: center;
+        }
+        #search-box:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
+        #channel-grid { 
+            flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+            gap: 25px; overflow-y: auto; padding: 20px; outline: none;
+            align-content: start; align-items: start;
+        }
+        .channel-card { 
+            background: var(--card-bg); padding: 25px 15px; border-radius: 20px; 
+            text-align: center; cursor: pointer; outline: none; border: 3px solid transparent; 
+            display: flex; flex-direction: column; align-items: center; height: auto;
+        }
+        .channel-card.filtered-out { display: none; }
+        .channel-card:focus { border-color: var(--accent); transform: scale(1.08); background: #252b36; z-index: 5; }
+        .logo-box { 
+            width: 80px; height: 80px; margin-bottom: 15px; pointer-events: none;
+            display: flex; align-items: center; justify-content: center; 
+            overflow: hidden; border-radius: 10px; background: rgba(0,0,0,0.2); 
+        }
+        .channel-card img { max-width: 100% max-height: 100% object-fit: contain; }
+        .letter-fallback { font-size: 2.5rem; font-weight: bold; color: var(--accent); }
+        .channel-card span { display: block; width: 100% font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+        #header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: var(--text-dim); }
+        #loader { position: absolute; top: 50% left: 50% transform: translate(-50%, -50%); z-index: 20; display: none; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #222; border-top: 5px solid var(--accent); border-radius: 50% animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<div id="loader">
+
+<div class="spinner">
+
+</div>
+
+</div>
+
+
+<div id="video-container" data-shaka-player-container="" class="shaka-mobile shaka-video-container" shaka-controls="true">
+
+    
+<video id="video" autoplay="" playsinline="" class="shaka-video">
+
+<source src="blob:https://ork.gt.tc/b8e8b3cd-de52-4c87-843d-113017484240" type="">
+
+</video>
+
+    
+<div id="audio-fallback">
+
+        
+<h2 id="fallback-name">
+Station
+</h2>
+
+        
+<p>
+No Video
+</p>
+
+    
+</div>
+
+
+<div class="shaka-controls-container" shown="true">
+
+<div class="shaka-scrim-container">
+
+</div>
+
+<div class="shaka-play-button-container">
+
+<button type="button" aria-label="Play" icon="replay" class="shaka-play-button shaka-no-propagation">
+
+</button>
+
+</div>
+
+<div class="shaka-hidden-fast-forward-container">
+
+<div class="shaka-fast-forward-container">
+
+<span>
+0s
+</span>
+
+<span class="shaka-forward-rewind-container-icon">
+fast_forward
+</span>
+
+</div>
+
+</div>
+
+<div class="shaka-hidden-rewind-container">
+
+<div class="shaka-rewind-container">
+
+<span>
+0s
+</span>
+
+<span class="shaka-forward-rewind-container-icon">
+fast_rewind
+</span>
+
+</div>
+
+</div>
+
+<div class="shaka-server-side-ad-container">
+
+</div>
+
+<div class="shaka-bottom-controls shaka-no-propagation">
+
+<div class="shaka-ad-controls shaka-hidden">
+
+<div class="shaka-ad-position shaka-hidden">
+
+<span class="shaka-ad-position-span">
+
+</span>
+
+</div>
+
+<div class="shaka-ad-counter">
+
+<span class="shaka-ad-counter-span">
+
+</span>
+
+</div>
+
+<div class="shaka-skip-ad-container">
+
+<div class="shaka-skip-ad-counter shaka-hidden">
+
+</div>
+
+<button type="button" class="shaka-skip-ad-button shaka-hidden shaka-no-propagation" disabled="">
+Skip Ad
+</button>
+
+</div>
+
+</div>
+
+<div class="shaka-controls-button-panel shaka-show-controls-on-mouse-over">
+
+<button type="button" aria-label="Play" class="shaka-small-play-button material-icons-round shaka-tooltip">
+play_arrow
+</button>
+
+<button type="button" class="shaka-current-time" disabled="">
+0:00
+</button>
+
+<div class="shaka-spacer" aria-hidden="true">
+
+</div>
+
+<button type="button" class="shaka-overflow-button shaka-resolution-button shaka-tooltip-status shaka-hidden" shaka-status="Auto" aria-label="Resolution">
+
+<i class="material-icons-round">
+settings
+</i>
+
+<label class="shaka-overflow-button-label shaka-overflow-menu-only">
+
+<span>
+Resolution
+</span>
+
+<span class="shaka-current-selection-span">
+Auto
+</span>
+
+</label>
+
+</button>
+
+<button type="button" class="shaka-fullscreen-button material-icons-round shaka-tooltip shaka-hidden" aria-label="Full screen">
+fullscreen
+</button>
+
+</div>
+
+<div class="shaka-range-container shaka-seek-bar-container" style="background: linear-gradient(to right, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 0%, rgba(255, 255, 255, 0.54) 0%, rgba(255, 255, 255, 0.54) 0%, rgba(255, 255, 255, 0.3) 0%);">
+
+<div class="shaka-ad-markers">
+
+</div>
+
+<input class="shaka-range-element shaka-seek-bar shaka-no-propagation shaka-show-controls-on-mouse-over" type="range" step="any" min="0" max="0" aria-label="Seek">
+
+<div id="shaka-player-ui-thumbnail-container">
+
+<img id="shaka-player-ui-thumbnail-image" draggable="false">
+
+<div id="shaka-player-ui-thumbnail-time-container">
+
+<div id="shaka-player-ui-thumbnail-time">
+
+</div>
+
+</div>
+
+</div>
+
+<div id="shaka-player-ui-time-container">
+
+</div>
+
+</div>
+
+</div>
+
+<div class="shaka-no-propagation shaka-show-controls-on-mouse-over shaka-settings-menu shaka-hidden shaka-resolutions">
+
+<button type="button" class="shaka-back-to-overflow-button" aria-label="Resolution">
+
+<i class="material-icons-round">
+close
+</i>
+
+<span>
+Resolution
+</span>
+
+</button>
+
+<button type="button" class="shaka-enable-abr-button" aria-selected="true">
+
+<span class="shaka-auto-span shaka-chosen-item">
+Auto
+</span>
+
+<i class="material-icons-round shaka-chosen-item" aria-hidden="true">
+done
+</i>
+
+</button>
+
+</div>
+
+</div>
+
+<div class="shaka-client-side-ad-container shaka-hidden">
+
+</div>
+
+<div class="shaka-spinner-container shaka-hidden">
+
+<div class="shaka-spinner">
+
+<svg class="shaka-spinner-svg" viewBox="0 0 30 30">
+
+<circle class="shaka-spinner-path" cx="15" cy="15" r="14.5" fill="none" stroke-width="1" stroke-miterlimit="10">
+
+</circle>
+
+</svg>
+
+</div>
+
+</div>
+
+<div class="shaka-text-container" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+
+</div>
+
+</div>
+
+
+<div id="ui-layer">
+
+    
+<div id="header-info">
+
+        
+<span id="channel-count">
+148 Channels
+</span>
+
+        
+<span id="clock">
+12:28 AM
+</span>
+
+    
+</div>
+
+    
+<div id="search-section">
+
+<input type="text" id="search-box" placeholder="Search Channels..." tabindex="0">
+
+</div>
+
+    
+<div id="channel-grid" tabindex="-1">
+
+<div class="channel-card custom-card" tabindex="0">
+
+<div class="logo-box">
+
+<img src="cup.png" onerror="this.style.display='none';">
+
+</div>
+
+<span>
+Support me on Ko-fi
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="one ph">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/gkluDe9.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+O
+</div>
+
+</div>
+
+<span>
+One PH
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="kapatid channel">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/BUVWBm2.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+K
+</div>
+
+</div>
+
+<span>
+Kapatid Channel
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="buko">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/Wv0K5Yc.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+B
+</div>
+
+</div>
+
+<span>
+BuKO
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="sari-sari">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/e/ec/Sari-Sari_Channel_2D_Logo_2016.png/revision/latest?cb=20190317023940" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+S
+</div>
+
+</div>
+
+<span>
+SARI-SARI
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="ptv4">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/d/dc/PTV_4_Para_Sa_Bayan_Alternative_Logo_June_2017.png/revision/latest?cb=20171019065428" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+P
+</div>
+
+</div>
+
+<span>
+PTV4
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="one news">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/bpRiu54.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+O
+</div>
+
+</div>
+
+<span>
+One News
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="rptv">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/f/fb/RPTV_Alternative_Logo_2024.png/revision/latest?cb=20240305140432" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+R
+</div>
+
+</div>
+
+<span>
+RPTV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tv5">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/7/7a/TV5_HD_Logo_2024.png/revision/latest/scale-to-width-down/290?cb=20240202141126" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+T
+</div>
+
+</div>
+
+<span>
+TV5
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="a2z">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/8/85/A2Z_Channel_11_without_Channel_11_3D_Logo_2020.png/revision/latest?cb=20231101144828" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+A2Z
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bilyonaryo channel">
+
+<div class="logo-box">
+
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTcxvjeBIthYiEaZHeVeYpDicIlOTdv3G6lzoal3VM2xVzWu_J7XxM657oz&s=10" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+B
+</div>
+
+</div>
+
+<span>
+Bilyonaryo Channel
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tvn movies pinoy">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/e/e3/TvN_Movies_Pinoy_Logo_2023.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+t
+</div>
+
+</div>
+
+<span>
+tvN Movies Pinoy
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="pbo">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/61fHpnW.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+P
+</div>
+
+</div>
+
+<span>
+PBO
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="viva cinema">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/tvfanon6528/images/2/2f/Viva_Cinema_�-.n.v.ຑ.png/revision/latest?cb=20210804092616" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+V
+</div>
+
+</div>
+
+<span>
+Viva Cinema
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tmc">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/6mNCite.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+T
+</div>
+
+</div>
+
+<span>
+TMC
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tap movies">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/3RVA5mV.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+T
+</div>
+
+</div>
+
+<span>
+Tap Movies
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hbo">
+
+<div class="logo-box">
+
+<img src="https://images.now-tv.com/shares/channelPreview/img/en_hk/color/ch115_170_122" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+HBO
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hbo hits">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/449_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+HBO Hits
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="dreamworks (tagalized)">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/cgfKSDP.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+D
+</div>
+
+</div>
+
+<span>
+DreamWorks (Tagalized)
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="pba rush">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/F2npB7o.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+P
+</div>
+
+</div>
+
+<span>
+PBA RUSH
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="one sports ">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/D33wRIq.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+O
+</div>
+
+</div>
+
+<span>
+One Sports 
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tap sports">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/ZsWDiRF.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+T
+</div>
+
+</div>
+
+<span>
+Tap Sports
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="knowledge channel">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/UIqEr2y.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+K
+</div>
+
+</div>
+
+<span>
+Knowledge Channel
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="rock action">
+
+<div class="logo-box">
+
+<img src="https://uploads-ssl.webflow.com/64e961c3862892bff815289d/64f57100366fe5c8cb6088a7_logo_ext_web.png?fbclid=IwY2xjawGIHF9leHRuA2FlbQIxMAABHaW0_Y0A9XL4w1ZXDSwAZCAxe62ui1Oy3gU5wjykfHsZ0eCjzNxl05M0JQ_aem_NIH5vZtTty4_B8wy5fB2LA" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+R
+</div>
+
+</div>
+
+<span>
+Rock Action
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="deped tv">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/f/f3/DepEd_TV_Logo_2020.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+D
+</div>
+
+</div>
+
+<span>
+DepEd TV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="fashion tv">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/Zd5zm7C.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+F
+</div>
+
+</div>
+
+<span>
+Fashion TV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hbo signature">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/t4HF5va.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+HBO Signature
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="kix">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/B8Fmzer.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+K
+</div>
+
+</div>
+
+<span>
+KIX
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="warner tv">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/vGEL2Ne.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+W
+</div>
+
+</div>
+
+<span>
+Warner TV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tvn premium">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/eE9IBhJ.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+t
+</div>
+
+</div>
+
+<span>
+tvN Premium
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="history">
+
+<div class="logo-box">
+
+<img src="https://cantseeus.com/wp-content/uploads/2023/10/History_28201529.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+History
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bbc earth">
+
+<div class="logo-box">
+
+<img src="https://imgur.com/QMB9sFW.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+B
+</div>
+
+</div>
+
+<span>
+BBC Earth
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="uaap varsity channel">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/V0sxXci.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+U
+</div>
+
+</div>
+
+<span>
+UAAP Varsity Channel
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="true tv">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/logopedia/images/a/a0/TRUETV_Logo_2024.png/revision/latest/smart/width/250/height/250?cb=20241110070654" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+T
+</div>
+
+</div>
+
+<span>
+True TV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hbo family">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/450_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+HBO Family
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="rock entertainment">
+
+<div class="logo-box">
+
+<img src="https://cdn.prod.website-files.com/67ad5259c6e804a40b4bae92/67ad5259c6e804a40b4bb0c1_logo_ent_red_web.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+R
+</div>
+
+</div>
+
+<span>
+Rock Entertainment
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="spotv">
+
+<div class="logo-box">
+
+<img src="https://linear-poster.astro.com.my/prod/logo/SPOTV.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+S
+</div>
+
+</div>
+
+<span>
+SPOTV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="spotv2">
+
+<div class="logo-box">
+
+<img src="https://linear-poster.astro.com.my/prod/logo/SPOTV2.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+S
+</div>
+
+</div>
+
+<span>
+SPOTV2
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="premier sports 2">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/logopedia/images/5/59/PremierSports2_logo.png/revision/latest/scale-to-width-down/250?cb=20220528091432" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+P
+</div>
+
+</div>
+
+<span>
+Premier Sports 2
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="nba tv philippines">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/x1ZG71v.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+N
+</div>
+
+</div>
+
+<span>
+NBA TV Philippines
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cinemax">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/337_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Cinemax
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="lifetime">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/Qvj8mf4.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+L
+</div>
+
+</div>
+
+<span>
+Lifetime
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="food network">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/vucZeKB.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+F
+</div>
+
+</div>
+
+<span>
+Food Network
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="axn">
+
+<div class="logo-box">
+
+<img src="http://linear-poster.astro.com.my/prod/logo/AXN_v1.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+A
+</div>
+
+</div>
+
+<span>
+AXN
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="abc australia">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/kVVax44.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+ABC Australia
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="travel channel">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/ZCYeUV2.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+T
+</div>
+
+</div>
+
+<span>
+Travel Channel
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bloomberg">
+
+<div class="logo-box">
+
+<img src="https://poster.starhubgo.com/Linear_channels2/708_1920x1080_HTV.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+B
+</div>
+
+</div>
+
+<span>
+Bloomberg
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bbc news">
+
+<div class="logo-box">
+
+<img src="https://logos-world.net/wp-content/uploads/2024/12/BBC-News-Logo-500x281.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+B
+</div>
+
+</div>
+
+<span>
+BBC News
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cartoon network">
+
+<div class="logo-box">
+
+<img src="https://poster.starhubgo.com/Linear_channels2/316_1920x1080_HTV.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Cartoon Network
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="dreamworks">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/cgfKSDP.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+D
+</div>
+
+</div>
+
+<span>
+DreamWorks
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hits now">
+
+<div class="logo-box">
+
+<img src="https://aqfadtv.xyz/logos/HITSNow.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+HITS Now
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="moonbug">
+
+<div class="logo-box">
+
+<img src="https://aqfadtv.xyz/logos/Moonbug.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+M
+</div>
+
+</div>
+
+<span>
+Moonbug
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="celestial movies pinoy">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/e5IZsv3.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Celestial Movies Pinoy
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hits movies">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/391_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+HITS Movies
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="thrill">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/logos/images/9/9c/Thrill_logo_2014.png/revision/latest/scale-to-width-down/306?cb=20220502112950&path-prefix=vi" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+T
+</div>
+
+</div>
+
+<span>
+THRILL
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="lotus macao">
+
+<div class="logo-box">
+
+<img src="https://cms.cignal.tv/Upload/Thumbnails/mo-macau-lotus-tv-3757.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+L
+</div>
+
+</div>
+
+<span>
+Lotus Macao
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="discovery channel">
+
+<div class="logo-box">
+
+<img src="https://cantseeus.com/wp-content/uploads/2023/10/discov.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+D
+</div>
+
+</div>
+
+<span>
+Discovery Channel
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="asian food network">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/O5jBcL2.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+Asian Food Network
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="nhk world japan">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/3zp7a0B.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+N
+</div>
+
+</div>
+
+<span>
+NHK World Japan
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="animal planet">
+
+<div class="logo-box">
+
+<img src="https://i.ibb.co/mBFs4RQ/pinpng-com-animal-planet-png-4851143.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+Animal Planet
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="kbs world">
+
+<div class="logo-box">
+
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjrxyZu1bPiJ3SdGvhVf3d3Muj5AqQ7ZkGpw&s" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+K
+</div>
+
+</div>
+
+<span>
+KBS World
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cnn international">
+
+<div class="logo-box">
+
+<img src="http://115.146.176.131:80/images/2acf9495fde07739914e7a7bb3ffee94.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+C
+</div>
+
+</div>
+
+<span>
+CNN International
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="france24">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/61MSiq9.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+F
+</div>
+
+</div>
+
+<span>
+France24
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="ibc 13">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/logopedia/images/f/f5/IBC_13_Logo_2012.png/revision/latest?cb=20170830080345" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+I
+</div>
+
+</div>
+
+<span>
+IBC 13
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="one sports hd">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/5/5a/One_Sports_ຐTV_channelຑ_3D_Logo_2020.png/revision/latest?cb=20230520142737" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+O
+</div>
+
+</div>
+
+<span>
+One Sports HD
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="premier sports">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/logopedia/images/6/63/Premier_Sports_logo_final.png/revision/latest?cb=20210920130931" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+P
+</div>
+
+</div>
+
+<span>
+Premier Sports
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="animax">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/MiUDLVa.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+Animax
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hits hd">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/YeqyD9W.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+Hits HD
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="global trekker">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/482_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+G
+</div>
+
+</div>
+
+<span>
+Global Trekker
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cctv4">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/HBisPOA.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+CCTV4
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tv5 monde">
+
+<div class="logo-box">
+
+<img src="https://klean.nl/wp-content/uploads/Logo_TV5_Monde_-_2021.svg_.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+T
+</div>
+
+</div>
+
+<span>
+TV5 Monde
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="nickelodeon">
+
+<div class="logo-box">
+
+<img src="http://apkip.tv/logos/UK/Nickelodeon.uk.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+N
+</div>
+
+</div>
+
+<span>
+Nickelodeon
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="nick jr">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/4MozyqM.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+N
+</div>
+
+</div>
+
+<span>
+Nick Jr
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hgtv">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/198_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+HGTV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="crime & investigation">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/369_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Crime & Investigation
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tv maria">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/logopedia/images/c/cd/TV_MARIA_PH.png/revision/latest?cb=20200421061144" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+T
+</div>
+
+</div>
+
+<span>
+TV Maria
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="wil tv">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/tv-philippines/images/4/43/WILTV_logo.png/revision/latest?cb=20251214021032" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+W
+</div>
+
+</div>
+
+<span>
+Wil TV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="arirang">
+
+<div class="logo-box">
+
+<img src="http://115.146.176.131/images/14a646307c92e88856903295e6fa0d5c.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+A
+</div>
+
+</div>
+
+<span>
+Arirang
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="al jazeera">
+
+<div class="logo-box">
+
+<img src="https://logos-world.net/wp-content/uploads/2023/04/Al-Jazeera-Logo.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+A
+</div>
+
+</div>
+
+<span>
+Al Jazeera
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="grandstand">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/2XFd4Hg.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+G
+</div>
+
+</div>
+
+<span>
+Grandstand
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="sports plus">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/qx0IGXg.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+S
+</div>
+
+</div>
+
+<span>
+Sports Plus
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cinemax">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/337_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Cinemax
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tvn movies">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/c4XvwO2.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+t
+</div>
+
+</div>
+
+<span>
+tvN Movies
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hits">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/YeqyD9W.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+Hits
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="axn hd">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/131_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+AXN HD
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hits movies">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/391_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+HITS Movies
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="celestial movies">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/Mb5ssnu.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Celestial Movies
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="discovery channel">
+
+<div class="logo-box">
+
+<img src="https://cantseeus.com/wp-content/uploads/2023/10/discov.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+D
+</div>
+
+</div>
+
+<span>
+Discovery Channel
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="discovery asia">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/tvfanon6528/images/3/33/Discovery_Asia_�-.n.v.ຑ.png/revision/latest/scale-to-width-down/1200?cb=20180408072813" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+D
+</div>
+
+</div>
+
+<span>
+Discovery Asia
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="history">
+
+<div class="logo-box">
+
+<img src="https://cantseeus.com/wp-content/uploads/2023/10/History_28201529.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+History
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="crime & investigation">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/369_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Crime & Investigation
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bbc earth">
+
+<div class="logo-box">
+
+<img src="https://imgur.com/QMB9sFW.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+B
+</div>
+
+</div>
+
+<span>
+BBC Earth
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bbc lifestyle">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/logopedia/images/2/29/BBC_Lifestyle.svg/revision/latest?cb=20091202093647" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+B
+</div>
+
+</div>
+
+<span>
+BBC Lifestyle
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="love nature">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/483_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+L
+</div>
+
+</div>
+
+<span>
+Love Nature
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hgtv">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/198_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+HGTV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tlc">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/08PRNMO.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+T
+</div>
+
+</div>
+
+<span>
+TLC
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="lifetime">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/Qvj8mf4.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+L
+</div>
+
+</div>
+
+<span>
+Lifetime
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="asian food network">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/O5jBcL2.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+Asian Food Network
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="hits now">
+
+<div class="logo-box">
+
+<img src="https://aqfadtv.xyz/logos/HITSNow.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+H
+</div>
+
+</div>
+
+<span>
+HITS Now
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="nickelodeon">
+
+<div class="logo-box">
+
+<img src="http://apkip.tv/logos/UK/Nickelodeon.uk.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+N
+</div>
+
+</div>
+
+<span>
+Nickelodeon
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bbc world news">
+
+<div class="logo-box">
+
+<img src="https://logos-world.net/wp-content/uploads/2024/12/BBC-News-Logo-500x281.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+B
+</div>
+
+</div>
+
+<span>
+BBC World News
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="channel news asia">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/vm9Z0uV.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Channel News Asia
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cnn">
+
+<div class="logo-box">
+
+<img src="http://115.146.176.131:80/images/2acf9495fde07739914e7a7bb3ffee94.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+C
+</div>
+
+</div>
+
+<span>
+CNN
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cnbc asia">
+
+<div class="logo-box">
+
+<img src="https://i.postimg.cc/76CXD57r/CNBCAsia.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+CNBC Asia
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bloomberg">
+
+<div class="logo-box">
+
+<img src="https://poster.starhubgo.com/Linear_channels2/708_1920x1080_HTV.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+B
+</div>
+
+</div>
+
+<span>
+Bloomberg
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cgtn">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/logopedia/images/2/24/CGTN_Documentary.svg/revision/latest/scale-to-width-down/250?cb=20210818141459" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+CGTN
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="al jazeera">
+
+<div class="logo-box">
+
+<img src="https://logos-world.net/wp-content/uploads/2023/04/Al-Jazeera-Logo.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+A
+</div>
+
+</div>
+
+<span>
+Al Jazeera
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="adult swim">
+
+<div class="logo-box">
+
+<img src="https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/canada/adult-swim-ca.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+Adult Swim
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cartoon network">
+
+<div class="logo-box">
+
+<img src="https://poster.starhubgo.com/Linear_channels2/316_1920x1080_HTV.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Cartoon Network
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="ytv">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/LXoPZ8x.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+Y
+</div>
+
+</div>
+
+<span>
+YTV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="disney channel">
+
+<div class="logo-box">
+
+<img src="http://apkip.tv/logos/Canada/DisneyChannel.ca.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+D
+</div>
+
+</div>
+
+<span>
+Disney Channel
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="kapamilya channel">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/WcYS3S3.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+K
+</div>
+
+</div>
+
+<span>
+Kapamilya Channel
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="anc ph">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/Bcu69bU.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+ANC Ph
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="anc global">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/Bcu69bU.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+ANC Global
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="channel news asia">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/vm9Z0uV.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Channel News Asia
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="dzmm teleradyo">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/npj41pk.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+D
+</div>
+
+</div>
+
+<span>
+DZMM TeleRadyo
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="tfc">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/zZWj5vn.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+T
+</div>
+
+</div>
+
+<span>
+TFC
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cinemo! global">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/f/f2/Cine_Moຉ_3D_Logo_2011.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Cinemo! Global
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="myx global">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/CIPTNnT.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+M
+</div>
+
+</div>
+
+<span>
+MYX Global
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="w-sport">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/503_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+W
+</div>
+
+</div>
+
+<span>
+W-Sport
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cbeebies">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/logopedia/images/7/7a/Cbeebies.svg/revision/latest?cb=20211011211035" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Cbeebies
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bein sports 1">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/236_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+B
+</div>
+
+</div>
+
+<span>
+Bein Sports 1
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bein sports 2">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/466_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+B
+</div>
+
+</div>
+
+<span>
+Bein Sports 2
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="bein sports 3">
+
+<div class="logo-box">
+
+<img src="https://divign0fdw3sv.cloudfront.net/Images/ChannelLogo/contenthub/313_144.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+B
+</div>
+
+</div>
+
+<span>
+Bein Sports 3
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="abc australia">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/kVVax44.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+ABC Australia
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cctv4">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/HBisPOA.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+CCTV4
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="france24">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/61MSiq9.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+F
+</div>
+
+</div>
+
+<span>
+France24
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="celestial classic movies">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/4JCkzjl.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Celestial Classic Movies
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="gma pinoy tv">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/ZOqMJfw.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+G
+</div>
+
+</div>
+
+<span>
+GMA Pinoy TV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="gma life tv">
+
+<div class="logo-box">
+
+<img src="https://p1.hiclipart.com/preview/960/979/640/tv-channel-icons-pack-gma-life-tv-color-png-icon.jpg" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+G
+</div>
+
+</div>
+
+<span>
+GMA Life TV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="gma news tv">
+
+<div class="logo-box">
+
+<img src="https://toppng.com/uploads/preview/ma-news-tv-logo-11563045262oxeappsxdb.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+G
+</div>
+
+</div>
+
+<span>
+GMA News TV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="golf channel">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/gfFaRwH.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+G
+</div>
+
+</div>
+
+<span>
+Golf Channel
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="movies now">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/3BCg3pS.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+M
+</div>
+
+</div>
+
+<span>
+Movies Now
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="zee cinema">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/Qy1Mcoc.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+Z
+</div>
+
+</div>
+
+<span>
+Zee Cinema
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="cinema one">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/9/94/Cinema_One_Logo_2020.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+C
+</div>
+
+</div>
+
+<span>
+Cinema One
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="aniplus">
+
+<div class="logo-box">
+
+<img src="https://i.imgur.com/5gMIjA2.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+A
+</div>
+
+</div>
+
+<span>
+Aniplus
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="jeepney tv">
+
+<div class="logo-box">
+
+<img src="https://static.wikia.nocookie.net/russel/images/0/0b/Jeepney_TV_3D_Logo_2015.png/revision/latest?cb=20230326142526" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+J
+</div>
+
+</div>
+
+<span>
+Jeepney TV
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="87.5 republika fm1">
+
+<div class="logo-box">
+
+<img src="https://static.mytuner.mobi/media/tvos_radios/fuyfjcn4gqee.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+8
+</div>
+
+</div>
+
+<span>
+87.5 Republika FM1
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="89.9 magic">
+
+<div class="logo-box">
+
+<img src="https://static.mytuner.mobi/media/tvos_radios/216/dwtm-magic-899-fm.dd9f5d41.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+8
+</div>
+
+</div>
+
+<span>
+89.9 Magic
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="90.7 love radio">
+
+<div class="logo-box">
+
+<img src="https://static.mytuner.mobi/media/tvos_radios/141/dzmb-love-radio-907-fm.fd6dd832.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+9
+</div>
+
+</div>
+
+<span>
+90.7 Love Radio
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="91.5 win radio">
+
+<div class="logo-box">
+
+<img src="https://onlineradio.ph/uploads/img/91-5-win-radio-manila.jpg" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="display: none;">
+
+<div class="letter-fallback" style="display: block;">
+9
+</div>
+
+</div>
+
+<span>
+91.5 Win Radio
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="93.1 monster radio rx">
+
+<div class="logo-box">
+
+<img src="https://static.mytuner.mobi/media/tvos_radios/209/monster-radio-rx-931-fm.bd515dec.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+9
+</div>
+
+</div>
+
+<span>
+93.1 Monster Radio RX
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="96.3 easy rock">
+
+<div class="logo-box">
+
+<img src="https://static.mytuner.mobi/media/tvos_radios/138/dwrk-963-easy-rock.c2c03660.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+9
+</div>
+
+</div>
+
+<span>
+96.3 Easy Rock
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="96.3 wrock">
+
+<div class="logo-box">
+
+<img src="https://static.mytuner.mobi/media/tvos_radios/669/dyrk-963-wrock.b988c09b.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+9
+</div>
+
+</div>
+
+<span>
+96.3 WRocK
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="97.9 home radio">
+
+<div class="logo-box">
+
+<img src="https://static.mytuner.mobi/media/tvos_radios/3fFrky9eJE.jpg" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+9
+</div>
+
+</div>
+
+<span>
+97.9 Home Radio
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="101.1 yes fm">
+
+<div class="logo-box">
+
+<img src="https://static.mytuner.mobi/media/tvos_radios/211/yes-fm-manila-1011.3596a020.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+1
+</div>
+
+</div>
+
+<span>
+101.1 Yes Fm
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="100.3 rj fm">
+
+<div class="logo-box">
+
+<img src="https://cdn-profiles.tunein.com/s120158/images/logog.png?t=162748" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+1
+</div>
+
+</div>
+
+<span>
+100.3 RJ FM
+</span>
+
+</div>
+
+<div class="channel-card" tabindex="0" data-name="102.7 star fm">
+
+<div class="logo-box">
+
+<img src="https://static.mytuner.mobi/media/tvos_radios/848/star-fm-manila.c6a245b5.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+<div class="letter-fallback" style="display:none">
+1
+</div>
+
+</div>
+
+<span>
+102.7 Star FM
+</span>
+
+</div>
+
+</div>
+
+
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.14.28/shaka-player.ui.min.js">
+
+</script>
+
+
+<script src="M3U8Interpreter.js">
+
+</script>
+
+
+<script>
+
+    let player, ui, allChannels = [], lastFocusedElement = null;
+    const video = document.getElementById('video');
+    const videoContainer = document.getElementById('video-container');
+    const uiLayer = document.getElementById('ui-layer');
+    const loader = document.getElementById('loader');
+    const searchBox = document.getElementById('search-box');
+    const grid = document.getElementById('channel-grid');
+    const fallback = document.getElementById('audio-fallback');
+    const fallbackName = document.getElementById('fallback-name');
+    const toggleUI = (show) =>
+ {
+        if (show) {
+            if (document.fullscreenElement) document.exitFullscreen().catch(() =>
+ {});
+            uiLayer.classList.remove('hidden');
+            let attempts = 0;
+            const focusInterval = setInterval(() =>
+ {
+                const target = (lastFocusedElement && document.body.contains(lastFocusedElement)) ? lastFocusedElement : searchBox;
+                target.focus();
+                if (document.activeElement === target || attempts >
+ 10) clearInterval(focusInterval);
+                attempts  ;
+            }, 50);
+            window.history.pushState({ ui: 'visible' }, '');
+        } else {
+            uiLayer.classList.add('hidden');
+        }
+    };
+    window.onpopstate = () =>
+ { if (uiLayer.classList.contains('hidden')) toggleUI(true); };
+    async function init() {
+        shaka.polyfill.installAll();
+        player = new shaka.Player(video);
+        ui = new shaka.ui.Overlay(player, videoContainer, video);
+        ui.configure({
+            'controlPanelElements': ['play_pause', 'time_and_duration', 'spacer', 'quality', 'fullscreen'],
+            'overflowMenuButtons': ['quality']
+        });
+        player.addEventListener('loaded', () =>
+ {
+            if (player.isAudioOnly()) {
+                fallback.style.display = 'flex';
+            } else {
+                fallback.style.display = 'none';
+            }
+        });
+        try {
+            const res = await fetch('proxy.php'); 
+            const text = await res.text();
+            const interpreter = new M3U8Interpreter(text);
+            interpreter.parse();
+            allChannels = interpreter.getChannels();
+            renderInitialGrid(); 
+            toggleUI(true);
+        } catch (e) { console.error(e); }
+    }
+    function renderInitialGrid() {
+        grid.innerHTML = '';
+        const customCard = document.createElement('div');
+        customCard.className = 'channel-card custom-card'; customCard.tabIndex = 0;
+        customCard.innerHTML = `
+<div class="logo-box">
+
+<img src="cup.png" onerror="this.style.display='none';">
+
+</div>
+
+<span>
+Support me on Ko-fi
+</span>
+`;
+        customCard.onclick = () =>
+ {
+            window.location.href = "https://ko-fi.com/acevin";
+        };
+        customCard.onkeydown = (e) =>
+ { if(e.key === 'Enter') customCard.onclick(); };
+        grid.appendChild(customCard);
+        allChannels.forEach(ch =>
+ {
+            const card = document.createElement('div');
+            card.className = 'channel-card'; card.tabIndex = 0;
+            card.setAttribute('data-name', ch.channelName.toLowerCase());
+            const logo = ch.tvgLogo ? `
+<img src="${ch.tvgLogo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+` : '';
+            const letter = `
+<div class="letter-fallback" style="${ch.tvgLogo ? 'display:none' : 'display:block'}">
+${ch.channelName[0]}
+</div>
+`;
+            card.innerHTML = `
+<div class="logo-box">
+${logo}${letter}
+</div>
+
+<span>
+${ch.channelName}
+</span>
+`;
+            card.onclick = async () =>
+ {
+                lastFocusedElement = card; 
+                toggleUI(false);
+                fallback.style.display = 'none'; 
+                loader.style.display = 'block';
+                fallbackName.textContent = ch.channelName;
+                try {
+                    if (videoContainer.requestFullscreen) await videoContainer.requestFullscreen();
+                    player.configure({ drm: { clearKeys: {} } });
+                    if (ch.licenseKey) {
+                        let keys = {};
+                        ch.licenseKey.forEach(k =>
+ keys[k.keyId] = k.key);
+                        player.configure({ drm: { clearKeys: keys } });
+                    }
+                    await player.load(ch.manifestUrl);
+                } catch (e) { toggleUI(true); }
+                loader.style.display = 'none';
+            };
+            card.onkeydown = (e) =>
+ { if(e.key === 'Enter') card.click(); };
+            grid.appendChild(card);
+        });
+        updateCount();
+    }
+    function handleSearch(val) {
+        const query = val.toLowerCase();
+        grid.querySelectorAll('.channel-card:not(.custom-card)').forEach(card =>
+ {
+            card.classList.toggle('filtered-out', !card.getAttribute('data-name').includes(query));
+        });
+        updateCount();
+    }
+    function updateCount() {
+        const visible = grid.querySelectorAll('.channel-card:not(.filtered-out)').length;
+        document.getElementById('channel-count').textContent = `${visible} Channels`;
+    }
+    document.addEventListener('keydown', (e) =>
+ {
+        const active = document.activeElement;
+        const allCards = Array.from(grid.querySelectorAll('.channel-card:not(.filtered-out)'));
+        if (['Backspace', 'Escape'].includes(e.key)) {
+            if (uiLayer.classList.contains('hidden')) { e.preventDefault(); toggleUI(true); }
+            return;
+        }
+        if (uiLayer.classList.contains('hidden')) return;
+        if (e.key === 'ArrowDown' && active === searchBox) {
+            e.preventDefault(); if (allCards.length >
+ 0) allCards[0].focus();
+        } 
+        else if (active.classList.contains('channel-card')) {
+            const rect = active.getBoundingClientRect();
+            let next = null;
+            if (e.key === 'ArrowUp') {
+                const candidates = allCards.filter(c =>
+ c.getBoundingClientRect().bottom 
+< rect.top   2);
+                if (candidates.length === 0) { e.preventDefault(); searchBox.focus(); return; }
+                const closestBottom = Math.max(...candidates.map(c =>
+ c.getBoundingClientRect().bottom));
+                const row = candidates.filter(c =>
+ c.getBoundingClientRect().bottom >
+= closestBottom - 10);
+                next = row.reduce((p, c) =>
+ Math.abs(c.getBoundingClientRect().left - rect.left) 
+< Math.abs(p.getBoundingClientRect().left - rect.left) ? c : p);
+            } 
+            else if (e.key === 'ArrowDown') {
+                const candidates = allCards.filter(c =>
+ c.getBoundingClientRect().top >
+ rect.bottom - 2);
+                if (candidates.length >
+ 0) {
+                    const closestTop = Math.min(...candidates.map(c =>
+ c.getBoundingClientRect().top));
+                    const row = candidates.filter(c =>
+ c.getBoundingClientRect().top 
+<= closestTop   10);
+                    next = row.reduce((p, c) =>
+ Math.abs(c.getBoundingClientRect().left - rect.left) 
+< Math.abs(p.getBoundingClientRect().left - rect.left) ? c : p);
+                }
+            }
+            else if (e.key === 'ArrowLeft') { const i = allCards.indexOf(active); if (i >
+ 0) next = allCards[i - 1]; }
+            else if (e.key === 'ArrowRight') { const i = allCards.indexOf(active); if (i 
+< allCards.length - 1) next = allCards[i   1]; }
+            if (next) { e.preventDefault(); next.focus(); next.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        }
+    });
+    searchBox.oninput = (e) =>
+ handleSearch(e.target.value);
+    setInterval(() =>
+ { document.getElementById('clock').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }, 1000);
+    init();
+
+</script>
+
+
+
+</body>
+
+</html>
