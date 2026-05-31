@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>iYAD TV · Live Streams</title>
+  <meta name="description" content="Watch live TV channels from the JSON source. Stream news, entertainment, movies, sports and more.">
+  <meta name="referrer" content="no-referrer">
+
+  <!-- Core Styles -->
+  <link rel="stylesheet" href="https://cdn.iyad.space/styles.css">
+  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.7/controls.css">
+
+  <!-- Scripts: HLS.js, Shaka, Video.js + YouTube -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.7/shaka-player.compiled.js" defer></script>
+  <script src="https://vjs.zencdn.net/8.10.0/video.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/videojs-youtube@3.0.1/dist/Youtube.min.js" defer></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none; /* improved touch, no text-select on grid */
+    }
+    body {
+      margin: 0;
+      background: #0b0f17;
+      font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      padding-bottom: 70px;
+    }
+    .yad-app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 12px 16px 80px 16px;
+    }
+    /* header & search */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    #logo-container img {
+      height: 48px;
+      width: auto;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+    .search-bar {
+      flex: 2;
+      min-width: 200px;
+      display: flex;
+      gap: 8px;
+      background: #1e2432;
+      border-radius: 48px;
+      padding: 4px 12px;
+      align-items: center;
+    }
+    #search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 12px 6px;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+    }
+    #search-input::placeholder {
+      color: #9aa4bf;
+    }
+    .search-bar button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 40px;
+      transition: 0.2s;
+    }
+    .search-bar button:hover {
+      background: #2a3245;
+    }
+    .header-menu-toggle {
+      background: #2a2f3f;
+      padding: 10px 14px;
+      border-radius: 32px;
+      cursor: pointer;
+      font-size: 1.3rem;
+    }
+    /* channel grid */
+    .channel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 20px 12px;
+      margin-top: 10px;
+    }
+    .channel-card {
+      background: #121826;
+      border-radius: 24px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      border: 1px solid #2a2f3e;
+    }
+    .channel-card:hover {
+      transform: translateY(-4px);
+      background: #19202e;
+      border-color: #4b5a7a;
+    }
+    .channel-logo {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      background: #010101;
+      display: block;
+    }
+    .channel-info {
+      padding: 12px 8px;
+      text-align: center;
+    }
+    .channel-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #f0f3fa;
+    }
+    .channel-category {
+      font-size: 0.7rem;
+      color: #8f9bb5;
+      margin-top: 4px;
+    }
+    /* loading + error */
+    #loading-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      color: white;
+    }
+    #lottie-spinner-container {
+      width: 120px;
+      height: 120px;
+    }
+    #error-message-critical {
+      background: #ff4757aa;
+      padding: 20px;
+      border-radius: 24px;
+      text-align: center;
+      margin: 40px;
+      color: white;
+      font-weight: bold;
+    }
+    /* video player container */
+    #video-player-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #close-player-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: white;
+      font-size: 28px;
+      width: 48px;
+      height: 48px;
+      border-radius: 40px;
+      cursor: pointer;
+      z-index: 2100;
+      backdrop-filter: blur(6px);
+    }
+    .video-js, #hls-video-element, #video-player-element {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    #player-info-overlay {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 16px;
+      border-radius: 48px;
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 2100;
+      color: white;
+      font-weight: 500;
+      pointer-events: none;
+    }
+    #player-channel-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #222;
+      object-fit: cover;
+    }
+    .toast-notification {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e2a3a;
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 40px;
+      font-size: 0.85rem;
+      z-index: 3000;
+      display: none;
+      white-space: nowrap;
+    }
+    @media (max-width: 560px) {
+      .channel-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 12px;
+      }
+      .yad-app {
+        padding: 12px 12px 90px 12px;
+      }
+    }
+    /* simple category filter */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .filter-chip {
+      background: #1e2432;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 0.75rem;
+      color: #ccd6f0;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .filter-chip.active {
+      background: #3b4b6e;
+      color: white;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<div id="sticky-ad-banner-bottom" style="position: fixed; bottom: 0; left: 0; width: 100%; text-align: center; z-index: 100; background: #000000aa; backdrop-filter: blur(4px);">
+  <div id="adsterra-banner-container-wrapper" style="margin: 0 auto; min-height: 60px;"></div>
+</div>
+
+<div class="yad-app" id="page-manager">
+  <div class="header-place">
+    <div class="header">
+      <div id="logo-container" title="iYAD TV">
+        <a href="#"><img src="https://cdn.iyad.space/logo.png" alt="Logo" id="app-logo-img" style="height:48px;"></a>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search channels..." autocomplete="off">
+        <button id="search-button" aria-label="Search"><i class="fas fa-search"></i></button>
+        <button id="clear-button" style="display:none;"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="header-menu-toggle" id="main-nav-toggle" tabindex="1" aria-label="Menu">
+        <i class="fas fa-bars"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category filter row (dynamic) -->
+  <div class="filter-bar" id="category-filter-bar"></div>
+
+  <main id="main-content">
+    <div id="channel-grid" class="channel-grid"></div>
+  </main>
+
+  <div id="loading-indicator">
+    <div id="lottie-spinner-container" style="width:120px; height:120px;"></div>
+    <p>Loading channels from JSON source...</p>
+  </div>
+  <div id="error-message-critical" style="display:none;"></div>
+
+  <!-- video player overlay -->
+  <div id="video-player-container" style="display: none;">
+    <button id="close-player-button" aria-label="Close"><i class="fas fa-times"></i></button>
+    <div id="player-info-overlay">
+      <img id="player-channel-logo" src="" alt="logo">
+      <span id="player-channel-name"></span>
+    </div>
+    <div id="hls-player-wrapper" style="width:100%; height:100%; display:none;">
+      <video id="hls-video-element" autoplay playsinline style="width:100%;height:100%"></video>
+    </div>
+    <div id="shaka-player-wrapper" style="width:100%; height:100%; display:none;">
+      <video id="video-player-element" autoplay playsinline style="width:100%;height:100%"></video>
+    </div>
+    <div id="youtube-player-wrapper" style="width:100%; height:100%; display:none;">
+      <video id="videojs-youtube-player" class="video-js vjs-default-skin vjs-big-play-centered" playsinline></video>
+    </div>
+  </div>
+  <div id="toast-notification" class="toast-notification"></div>
+</div>
+
+<script>
+  (function(){
+    // -------- GLOBALS --------
+    let allChannels = [];
+    let filteredChannels = [];
+    let activeCategory = "All";
+    let currentPlayer = null;       // hls / shaka / videojs instance
+    let currentPlayerType = null;
+    let activeVideoElement = null;
+    const gridContainer = document.getElementById('channel-grid');
+    const loadingDiv = document.getElementById('loading-indicator');
+    const errorDiv = document.getElementById('error-message-critical');
+    const playerContainer = document.getElementById('video-player-container');
+    const closeBtn = document.getElementById('close-player-button');
+    const searchInput = document.getElementById('search-input');
+    const searchBtn = document.getElementById('search-button');
+    const clearBtn = document.getElementById('clear-button');
+    const filterBar = document.getElementById('category-filter-bar');
+
+    // ---- toast helper ----
+    function showToast(msg, duration=2000) {
+      const toast = document.getElementById('toast-notification');
+      toast.innerText = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, duration);
+    }
+
+    // ---- close player and destroy everything ----
+    function closePlayer() {
+      if (currentPlayer) {
+        try {
+          if (currentPlayerType === 'hls' && currentPlayer) {
+            currentPlayer.destroy();
+          } else if (currentPlayerType === 'shaka' && currentPlayer) {
+            currentPlayer.destroy();
+          } else if (currentPlayerType === 'youtube' && currentPlayer) {
+            currentPlayer.dispose();
+          }
+        } catch(e) { console.warn(e); }
+        currentPlayer = null;
+      }
+      // hide all wrappers
+      document.getElementById('hls-player-wrapper').style.display = 'none';
+      document.getElementById('shaka-player-wrapper').style.display = 'none';
+      document.getElementById('youtube-player-wrapper').style.display = 'none';
+      playerContainer.style.display = 'none';
+      currentPlayerType = null;
+      // optionally pause any video element
+      if (activeVideoElement) {
+        activeVideoElement.pause();
+        activeVideoElement.src = '';
+        activeVideoElement = null;
+      }
+    }
+
+    // ---- detect stream type (YouTube, m3u8, mpd) ----
+    function getStreamType(url, channelType) {
+      if (channelType === 'youtube-channel' || (url && (url.includes('youtube.com') || url.includes('youtu.be') || url.startsWith('@')))) {
+        return 'youtube';
+      }
+      if (url && (url.endsWith('.m3u8') || url.includes('/hls/') || url.includes('playlist.m3u8'))) return 'hls';
+      if (url && (url.endsWith('.mpd') || url.includes('/dash/') || url.includes('manifest.mpd'))) return 'dash';
+      return 'hls'; // default fallback
+    }
+
+    // ---- init player based on channel object ----
+    async function playChannel(channel) {
+      closePlayer();
+      let streamUrl = channel.streamUrl;
+      if (!streamUrl && channel.standbyUrls && channel.standbyUrls.length) streamUrl = channel.standbyUrls[0];
+      if (!streamUrl) {
+        showToast(`⚠️ No stream URL for ${channel.name}`);
+        return;
+      }
+      const channelType = channel.type || '';
+      let streamType = getStreamType(streamUrl, channelType);
+      
+      // handle youtube special: @handle or direct link
+      if (channelType === 'youtube-channel' || streamUrl.startsWith('@')) {
+        streamType = 'youtube';
+        let handle = streamUrl.startsWith('@') ? streamUrl : (channel.streamUrl.includes('@') ? channel.streamUrl : null);
+        if (handle) {
+          streamUrl = `https://www.youtube.com/@${handle.replace('@','')}/live`;
+        } else if (!streamUrl.includes('youtube.com')) {
+          streamUrl = `https://www.youtube.com/@${streamUrl}/live`;
+        }
+      }
+      
+      playerContainer.style.display = 'flex';
+      document.getElementById('player-channel-name').innerText = channel.name;
+      const logoImg = document.getElementById('player-channel-logo');
+      if (channel.logoLocal) logoImg.src = `https://cdn.iyad.space/logos/${channel.logoLocal}.png` || '';
+      else logoImg.src = '';
+
+      // show correct wrapper
+      if (streamType === 'hls') {
+        const wrapper = document.getElementById('hls-player-wrapper');
+        const videoEl = document.getElementById('hls-video-element');
+        wrapper.style.display = 'block';
+        document.getElementById('shaka-player-wrapper').style.display = 'none';
+        document.getElementById('youtube-player-wrapper').style.display = 'none';
+        activeVideoElement = videoEl;
+        if (Hls.isSupported()) {
+          const hls = new Hls({ enableWorker: true, maxBufferLength: 30 });
+          hls.loadSource(streamUrl);
+          hls.attachMedia(videoEl);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => { videoEl.play().catch(e=>console.warn); });
+          hls.on(Hls.Events.ERROR, (_, data) => { console.error(data); showToast(`HLS error: ${data.type}`); });
+          currentPlayer = hls;
+          currentPlayerType = 'hls';
+        } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+          videoEl.src = streamUrl;
+          videoEl.play().catch(e=>console.warn);
+          currentPlayer = null;
+          currentPlayerType = 'hls';
+        } else {
+          showToast('HLS not supported');
+        }
+      } 
+      else if (streamType === 'dash') {
+        const wrapper = document.getElementById('shaka-player-wrapper');
+        const videoEl = document.getElementById('video-player-element');
+        wrapper.style.display = 'block';
+        document.getElementById('hls-player-wrapper').style.display = 'none';
+        document.getElementById('youtube-player-wrapper').style.display = 'none';
+        activeVideoElement = videoEl;
+        if (typeof shaka !== 'undefined') {
+          const player = new shaka.Player(videoEl);
+          player.addEventListener('error', (e) => { console.error(e); showToast('DASH error'); });
+          await player.load(streamUrl).catch(e => { showToast('DASH failed'); console.warn(e); });
+          currentPlayer = player;
+          currentPlayerType = 'shaka';
+          videoEl.play().catch(e=>console.warn);
+        } else {
+          showToast('Shaka player not ready');
+        }
+      } 
+      else if (streamType === 'youtube') {
+        const wrapper = document.getElementById('youtube-player-wrapper');
+        wrapper.style.display = 'block';
+        document.getElementById('hls-player-wrapper').style.display = 'none';
+        document.getElementById('shaka-player-wrapper').style.display = 'none';
+        const videoJsEl = document.getElementById('videojs-youtube-player');
+        if (window.videojs) {
+          if (currentPlayer && currentPlayerType === 'youtube') currentPlayer.dispose();
+          const player = videojs(videoJsEl, {
+            techOrder: ['youtube'],
+            autoplay: true,
+            controls: true,
+            sources: [{ src: streamUrl, type: 'video/youtube' }]
+          });
+          player.ready(() => { player.play().catch(e=>console.warn); });
+          currentPlayer = player;
+          currentPlayerType = 'youtube';
+        } else {
+          showToast('Video.js not ready for YouTube');
+        }
+      }
+    }
+
+    // ---- render channel grid ----
+    function renderChannels(channelsList) {
+      if (!gridContainer) return;
+      gridContainer.innerHTML = '';
+      if (!channelsList.length) {
+        gridContainer.innerHTML = '<div style="color:white; text-align:center; padding:40px;">📺 No channels found.</div>';
+        return;
+      }
+      for (let ch of channelsList) {
+        const card = document.createElement('div');
+        card.className = 'channel-card';
+        const logoUrl = ch.logoLocal ? `https://cdn.iyad.space/logos/${ch.logoLocal}.png` : '';
+        card.innerHTML = `
+          <img class="channel-logo" src="${logoUrl}" alt="${ch.name}" onerror="this.src='https://cdn.iyad.space/default-channel.png'">
+          <div class="channel-info">
+            <div class="channel-name">${escapeHtml(ch.name)}</div>
+            <div class="channel-category">${ch.category || 'Uncategorized'}</div>
+          </div>
+        `;
+        card.addEventListener('click', (e) => {
+          e.stopPropagation();
+          playChannel(ch);
+        });
+        gridContainer.appendChild(card);
+      }
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+    // ---- build unique categories ----
+    function updateCategoryFilter(channels) {
+      const cats = new Set();
+      cats.add('All');
+      channels.forEach(ch => { if(ch.category) cats.add(ch.category); });
+      filterBar.innerHTML = '';
+      Array.from(cats).forEach(cat => {
+        const chip = document.createElement('div');
+        chip.className = `filter-chip ${activeCategory === cat ? 'active' : ''}`;
+        chip.innerText = cat;
+        chip.addEventListener('click', () => {
+          activeCategory = cat;
+          applyFiltersAndRender();
+          updateCategoryFilter(allChannels);
+        });
+        filterBar.appendChild(chip);
+      });
+    }
+
+    function applyFiltersAndRender() {
+      let filtered = [...allChannels];
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      if (searchTerm) {
+        filtered = filtered.filter(ch => ch.name.toLowerCase().includes(searchTerm) || (ch.category && ch.category.toLowerCase().includes(searchTerm)));
+      }
+      if (activeCategory !== 'All') {
+        filtered = filtered.filter(ch => ch.category === activeCategory);
+      }
+      filteredChannels = filtered;
+      renderChannels(filteredChannels);
+    }
+
+    // ---- fetch channels from GitHub JSON ----
+    async function fetchAndLoadChannels() {
+      const jsonUrl = 'https://raw.githubusercontent.com/Joker7263/Nba-live/refs/heads/main/all%20channel.json';
+      loadingDiv.style.display = 'flex';
+      errorDiv.style.display = 'none';
+      try {
+        const response = await fetch(jsonUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (data && Array.isArray(data.channels)) {
+          allChannels = data.channels.map(ch => ({
+            ...ch,
+            category: ch.category || 'Entertainment',
+            streamUrl: ch.streamUrl || ''
+          }));
+          // top5 not mandatory but we keep original structure
+          if(data.top5) console.log('top5 channels:', data.top5);
+          updateCategoryFilter(allChannels);
+          applyFiltersAndRender();
+          loadingDiv.style.display = 'none';
+        } else {
+          throw new Error('Invalid JSON structure: missing channels array');
+        }
+      } catch (err) {
+        console.error(err);
+        loadingDiv.style.display = 'none';
+        errorDiv.style.display = 'block';
+        errorDiv.innerText = `❌ Failed to load channels: ${err.message}. Check CORS or network.`;
+        gridContainer.innerHTML = '';
+      }
+    }
+
+    // ---- search listeners ----
+    function performSearch() {
+      applyFiltersAndRender();
+      if(searchInput.value.length > 0) clearBtn.style.display = 'flex';
+      else clearBtn.style.display = 'none';
+    }
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('input', (e) => {
+      if(e.target.value === '') { clearBtn.style.display = 'none'; performSearch();}
+      else { clearBtn.style.display = 'flex'; performSearch();}
+    });
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.style.display = 'none';
+      performSearch();
+    });
+
+    // ---- close player on button and also on ESC ----
+    closeBtn.addEventListener('click', closePlayer);
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape' && playerContainer.style.display === 'flex') closePlayer();
+    });
+
+    // ---- adsterra-like sticky banner (dynamic size, but we keep stub compatibility) ----
+    function setupAdBanner() {
+      const adWrapper = document.getElementById('adsterra-banner-container-wrapper');
+      if(adWrapper){
+        adWrapper.innerHTML = '<div style="color:white; font-size:12px; background:#111; padding:5px;">📍 Channel Streams Ready</div>';
+      }
+    }
+    setupAdBanner();
+
+    // ---- simple lottie loading (optional) ----
+    if(typeof lottie !== 'undefined'){
+      const container = document.getElementById('lottie-spinner-container');
+      if(container) {
+        lottie.loadAnimation({
+          container: container,
+          renderer: 'svg',
+          loop: true,
+          autoplay: true,
+          path: 'https://cdn.iyad.space/loading-spinner.json'
+        }).setSpeed(0.8);
+      }
+    }
+
+    // ---- start loading channels ----
+    fetchAndLoadChannels();
+  })();
+</script>
+
+<!-- chat components stubs (optional but consistent) -->
+<div id="iyad-chat-circle" style="display:none;"></div>
+<script nomodule src="https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js"></script>
+<script nomodule src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.6.2/dist/fetch.umd.js"></script>
+</body>
+</html>
