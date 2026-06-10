@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bread Bypass | Secure Tool</title>
-    <!-- ========================================================================= -->
-    <!-- ADVANCED PROTECTION: Anti-View-Source, Anti-Debug, Anti-Dump, Anti-Inspect -->
-    <!-- ========================================================================= -->
+    <title>Bread Bypass | Secure Format Converter</title>
     <style>
         :root {
             --md-sys-color-background: #0f0f0f;
@@ -31,30 +28,9 @@
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             --font-code: "JetBrains Mono", "Fira Code", Consolas, monospace;
         }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            background-color: var(--md-sys-color-background);
-            color: var(--md-sys-color-on-background);
-            font-family: var(--font-main);
-            line-height: 1.5;
-            padding: 16px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .app-container {
-            width: 100%;
-            max-width: 1000px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--md-sys-color-background); color: var(--md-sys-color-on-background); font-family: var(--font-main); line-height: 1.5; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        .app-container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 24px; }
         header { text-align: center; margin-bottom: 8px; }
         h1 { font-size: 26px; font-weight: 400; color: var(--md-sys-color-primary); letter-spacing: -0.5px; }
         .subtitle { font-size: 13px; color: var(--md-sys-color-outline); font-weight: 500; }
@@ -78,268 +54,140 @@
         .btn-icon-only { width: 48px; padding: 0; flex: 0 0 48px; }
         #results-area { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; display: none; animation: fadeIn 0.5s ease; }
         #results-area.active { display: grid; }
-        .result-card { background-color: var(--md-sys-color-surface); border-radius: var(--radius-large); overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--md-sys-color-outline-variant); height: fit-content; transition: all 0.2s; }
+        .result-card { background-color: var(--md-sys-color-surface); border-radius: var(--radius-large); overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--md-sys-color-outline-variant); height: fit-content; }
         .result-header { padding: 12px 16px; background-color: var(--md-sys-color-surface-container-high); border-bottom: 1px solid var(--md-sys-color-outline-variant); display: flex; justify-content: space-between; align-items: center; }
-        .result-title { font-size: 14px; font-weight: 600; color: var(--md-sys-color-primary); letter-spacing: 0.3px; }
-        .code-preview { background-color: #0a0a0c; color: #a5d6ff; padding: 16px; font-family: var(--font-code); font-size: 12px; white-space: pre-wrap; overflow-y: auto; max-height: 200px; border-bottom: 1px solid var(--md-sys-color-outline-variant); line-height: 1.45; }
+        .result-title { font-size: 14px; font-weight: 600; color: var(--md-sys-color-primary); }
+        .code-preview { background-color: #0a0a0c; color: #a5d6ff; padding: 16px; font-family: var(--font-code); font-size: 12px; white-space: pre-wrap; overflow-y: auto; max-height: 200px; font-family: monospace; }
         .result-actions { padding: 12px; display: flex; gap: 10px; background-color: var(--md-sys-color-surface); }
         .result-actions button { height: 40px; font-size: 13px; flex: 1; }
-        .global-bar { background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); padding: 16px; border-radius: var(--radius-large); display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; animation: slideUp 0.3s cubic-bezier(0.2, 0, 0, 1); }
+        .global-bar { background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); padding: 16px; border-radius: var(--radius-large); display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .global-bar.visible { display: flex; }
-        .global-bar .btn-container { margin-top: 0; gap: 8px; }
-        .global-bar .btn-tonal { height: 40px; font-size: 13px; padding: 0 20px; background-color: rgba(0,0,0,0.25); backdrop-filter: blur(2px); }
         .extract-bar { background-color: var(--md-sys-color-surface-container-high); border-radius: var(--radius-large); padding: 16px; margin-top: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-        .extract-bar span { font-size: 13px; color: var(--md-sys-color-outline); }
-        @media (max-width: 600px) { .input-grid { grid-template-columns: 1fr; } h1 { font-size: 22px; } .btn-container { flex-direction: row; } }
         .hidden { display: none !important; }
-        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background-color: #2b2b2e; color: #ffffff; padding: 12px 24px; border-radius: 50px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: 0.3s cubic-bezier(0.2, 0, 0, 1); z-index: 1000; font-weight: 500; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background-color: #2b2b2e; color: #fff; padding: 12px 24px; border-radius: 50px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 1000; }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--md-sys-color-surface-container); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: var(--md-sys-color-outline); border-radius: 4px; }
-        /* extra protection layer */
-        .protection-overlay { display: none; }
+        @media (max-width: 600px) { .input-grid { grid-template-columns: 1fr; } h1 { font-size: 22px; } }
     </style>
 </head>
 <body>
 <div class="app-container">
-    <header>
-        <h1>Bread Bypass Formatting Tool</h1>
-        <div class="subtitle">Made by BreadOnTop • 🔒 Protected Environment</div>
-    </header>
+    <header><h1>🍞 Bread Bypass Formatting Tool</h1><div class="subtitle">Made by BreadOnTop • Secured</div></header>
     <section class="card">
         <div class="input-grid">
-            <div class="form-group"><label for="libName">Library / Module</label><input type="text" id="libName" value="libanogs.so"></div>
-            <div class="form-group"><label for="hexPatch">Hex Patch (bytes)</label><input type="text" id="hexPatch" value="00 00 80 D2 C0 03 5F D6"></div>
+            <div class="form-group"><label>Library / Module</label><input type="text" id="libName" value="libanogs.so"></div>
+            <div class="form-group"><label>Hex Patch (bytes)</label><input type="text" id="hexPatch" value="00 00 80 D2 C0 03 5F D6"></div>
         </div>
     </section>
     <section class="card">
-        <div class="form-group"><label>Offsets (One per line)</label><textarea id="input" placeholder="0x202894&#10;0x20F7BC&#10;0x210004"></textarea><div class="hint">Unique offsets only, uniform 0x format.</div></div>
-        <div class="extract-bar"><span>⚡ Extract Offsets From Any Format</span></div>
-        <div class="form-group" style="margin-top: 12px;"><label>Paste MemoryPatch or HexPatches lines - only offsets will be extracted</label><textarea id="extractInput" placeholder="HexPatches.MemoryPatch(&quot;libanogs.so&quot;, 0x202894, &quot;h00 00 80 D2 C0 03 5F D6&quot;, 32);&#10;MemoryPatch::createWithHex(&quot;libanogs.so&quot;, 0x1EEDA8, &quot;000080D2C0035FD6&quot;).Modify();" style="min-height: 120px;"></textarea>
-            <div class="btn-container"><button class="btn-secondary" id="extractBtn">Extract Offsets Only</button><button class="btn-tonal" id="clearExtractBtn">Clear</button></div>
-            <div class="hint">Extracts offset values from MemoryPatch, HexPatches, EncOff, HOOK_LIB, etc.</div>
+        <div class="form-group"><label>Offsets (One per line)</label><textarea id="input" placeholder="0x202894&#10;0x20F7BC&#10;0x210004"></textarea><div class="hint">Unique offsets only, 0x format.</div></div>
+        <div class="extract-bar"><span>📌 Extract Offsets From Any Format</span></div>
+        <div class="form-group" style="margin-top:12px"><label>Paste MemoryPatch/HexPatches lines</label><textarea id="extractInput" placeholder="HexPatches.MemoryPatch(&quot;libanogs.so&quot;, 0x202894, &quot;h00 00 80 D2 C0 03 5F D6&quot;, 32);" style="min-height:100px"></textarea>
+            <div class="btn-container"><button class="btn-secondary" id="extractBtn">Extract Offsets</button><button class="btn-tonal" id="clearExtractBtn">Clear</button></div>
         </div>
-        <div class="btn-container" style="margin-top: 16px;"><button class="btn-tonal btn-icon-only" id="pasteBtn">Paste</button><button class="btn-primary" id="generateBtn">Generate All Formats</button></div>
+        <div class="btn-container"><button class="btn-tonal btn-icon-only" id="pasteBtn">📋</button><button class="btn-primary" id="generateBtn">Generate All Formats</button></div>
     </section>
-    <div class="global-bar" id="globalActions"><span style="font-weight: 600;">✨ All formats ready - Download or Copy</span><div class="btn-container" style="margin-top: 0;"><button class="btn-tonal" id="copyAllBtn">Copy All</button><button class="btn-tonal" id="saveAllBtn">Save All (txt)</button></div></div>
+    <div class="global-bar" id="globalActions"><span>✅ All formats ready</span><div class="btn-container"><button class="btn-tonal" id="copyAllBtn">Copy All</button><button class="btn-tonal" id="saveAllBtn">Save All</button></div></div>
     <div id="results-area"></div>
 </div>
-<div id="toast" class="toast">Secure mode active</div>
+<div id="toast" class="toast">Ready</div>
 
 <script>
-// ============================================================================
-//  ██████╗ ██████╗ ███████╗████████╗███████╗ ██████╗████████╗
-// ██╔═══██╗██╔══██╗██╔════╝╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝
-// ██║   ██║██████╔╝█████╗     ██║   █████╗  ██║        ██║   
-// ██║   ██║██╔══██╗██╔══╝     ██║   ██╔══╝  ██║        ██║   
-// ╚██████╔╝██║  ██║██║        ██║   ██║     ╚██████╗   ██║   
-//  ╚═════╝ ╚═╝  ╚═╝╚═╝        ╚═╝   ╚═╝      ╚═════╝   ╚═╝   
-// ============== ADVANCED ANTI-VIEW-SOURCE + ANTI-DUMP ========================
+// ========== ANTI-VIEW-SOURCE & ANTI-DUMP PROTECTION ==========
 (function() {
-    "use strict";
-    
-    // ---- BLOCK ALL KNOWN SOURCE ACCESS ATTEMPTS ----
-    const blockMessage = "🔒 Access denied by security policy";
-    
-    // 1. Disable right-click (contextmenu) completely
+    // Block all right-clicks
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
-        e.stopPropagation();
-        showSecureToast("Right-click blocked");
+        showSecureMsg("Context menu disabled");
         return false;
-    }, false);
+    });
     
-    // 2. Aggressive key blocking for all devtools / source viewing keys
-    const blockedKeys = [
-        'F12', 'F11', 'F10', 'F9', 'F8', 'F7', 'F6', 'F5', 
-        'I', 'J', 'C', 'U', 'S', 'O', 'E', 'K', 'P'
-    ];
+    // Block ALL devtools keys
     window.addEventListener('keydown', function(e) {
-        // F12 key
-        if (e.key === 'F12' || e.keyCode === 123) {
+        const blocked = [123]; // F12
+        if (blocked.includes(e.keyCode)) {
             e.preventDefault();
-            showSecureToast("Developer tools disabled");
+            showSecureMsg("DevTools blocked");
             return false;
         }
-        // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U, Ctrl+S, Ctrl+O, Ctrl+Shift+K, Ctrl+P, Ctrl+E
+        // Ctrl+U, Ctrl+S, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, F12
         if (e.ctrlKey) {
-            if (e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.key === 'i' || e.key === 'j' || e.key === 'c' || e.key === 'K' || e.key === 'k')) {
+            if (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S') {
                 e.preventDefault();
-                showSecureToast("Inspect/Console blocked");
+                showSecureMsg("View source blocked");
                 return false;
             }
-            if (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S' || e.key === 'o' || e.key === 'O' || e.key === 'p' || e.key === 'P' || e.key === 'e' || e.key === 'E') {
+            if (e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.key === 'i' || e.key === 'j' || e.key === 'c')) {
                 e.preventDefault();
-                showSecureToast("View source / save restricted");
+                showSecureMsg("Inspect blocked");
                 return false;
             }
         }
-        // Detect Ctrl+Shift+E (devtools)
-        if (e.ctrlKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
-            e.preventDefault();
-            showSecureToast("DevTools shortcut blocked");
-            return false;
-        }
-        // Prevent F3 / F4 / etc
+        // Block F12, F11, F10, F9, F8, F7, F6, F5
         if (e.keyCode >= 112 && e.keyCode <= 123) {
             e.preventDefault();
-            showSecureToast("Function key disabled");
+            showSecureMsg("Function key disabled");
             return false;
         }
     });
     
-    // 3. Disable drag and drop of any content (prevents file drop viewing)
-    window.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation(); });
-    window.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
-    window.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); showSecureToast("Drag & drop blocked"); });
+    // Block drag and drop
+    window.addEventListener('dragenter', e => { e.preventDefault(); e.stopPropagation(); });
+    window.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); });
+    window.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); showSecureMsg("Drop blocked"); });
     
-    // 4. Disable text selection on certain elements but allow user interaction with textareas? Actually maintain usability for textareas but prevent copying hidden source.
-    // Better: prevent selection on whole document except input/textarea? we allow normal usage but source protection still active.
-    
-    // 5. DEVTOOLS DETECTION (Advanced): if devtools opened, clear console and redirect?
-    let devtoolsDetected = false;
-    const detectDevTools = () => {
+    // DevTools detection
+    let devtoolsOpen = false;
+    setInterval(() => {
         const widthDiff = window.outerWidth - window.innerWidth > 160;
         const heightDiff = window.outerHeight - window.innerHeight > 160;
         if (widthDiff || heightDiff) {
-            if (!devtoolsDetected) {
-                devtoolsDetected = true;
-                showSecureToast("⚠️ DevTools detected! Features may be limited.");
-                // Optional: clear innerHTML of results to hinder dumping? Not breaking UX but deterrent
-                const results = document.getElementById('results-area');
-                if(results) results.style.opacity = "0.5";
-                setTimeout(() => { if(results) results.style.opacity = "1"; }, 1000);
+            if (!devtoolsOpen) {
+                devtoolsOpen = true;
+                showSecureMsg("⚠️ DevTools detected!");
             }
-        } else {
-            devtoolsDetected = false;
-        }
-    };
-    setInterval(detectDevTools, 1200);
+        } else { devtoolsOpen = false; }
+    }, 1500);
     
-    // 6. Override console methods to log nothing sensitive (but user won't notice)
+    // Override console methods to prevent source logging
     if (window.console) {
-        const noopFunc = () => {};
-        const sensitiveMethods = ['log', 'info', 'warn', 'debug', 'table', 'trace', 'group', 'groupCollapsed', 'groupEnd'];
-        sensitiveMethods.forEach(method => {
-            if (console[method]) {
-                const original = console[method];
-                console[method] = function(...args) {
-                    if (args.length && typeof args[0] === 'string' && (args[0].toLowerCase().includes('source') || args[0].toLowerCase().includes('html'))) {
-                        return;
-                    }
-                    original.apply(console, args);
-                };
-            }
-        });
+        const originalLog = console.log;
+        console.log = function(...args) {
+            if (args.length && typeof args[0] === 'string' && (args[0].includes('source') || args[0].includes('html'))) return;
+            originalLog.apply(console, args);
+        };
     }
     
-    // 7. MutationObserver to remove any injected script that tries to dump DOM or source
-    const antiDumpObserver = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            if (mutation.type === 'childList' && mutation.addedNodes.length) {
-                for (const node of mutation.addedNodes) {
-                    if (node.nodeType === 1 && node.tagName === 'SCRIPT') {
-                        const src = node.src || '';
-                        if (src.includes('devtools') || src.includes('inspect') || src.includes('dump')) {
-                            node.remove();
-                            showSecureToast("Malicious script blocked");
-                        }
-                        // Also if inline script contains dump patterns, remove it
-                        if (node.textContent && (node.textContent.includes('document.documentElement.innerHTML') || node.textContent.includes('outerHTML'))) {
-                            node.remove();
-                        }
-                    }
-                    if (node.nodeType === 1 && (node.id === 'view-source' || node.className === 'source-dump')) {
-                        node.remove();
-                    }
-                }
-            }
+    // Block printing
+    window.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+            e.preventDefault();
+            showSecureMsg("Print disabled");
+            return false;
         }
     });
-    antiDumpObserver.observe(document.documentElement, { childList: true, subtree: true });
     
-    // 8. Prevent 'view-source:' protocol usage via redirect
+    // Anti-debugger
+    setInterval(() => { debugger; }, 5000);
+    
+    // Disable view-source protocol
     if (window.location.protocol === 'view-source:') {
         window.location.href = 'about:blank';
     }
     
-    // 9. Disable printing to avoid PDF export of source
-    window.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
-            e.preventDefault();
-            showSecureToast("Print disabled for security");
-            return false;
+    function showSecureMsg(msg) {
+        const t = document.getElementById('toast');
+        if (t) {
+            t.textContent = `🔒 ${msg}`;
+            t.style.backgroundColor = '#b0003a';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 1800);
+            setTimeout(() => { if(t) t.style.backgroundColor = '#2e2e32'; }, 2000);
         }
-    });
-    
-    // 10. Block selection and copy of entire source via document copy (preserve user copy from generated results but block global copy of hidden things)
-    document.addEventListener('copy', (e) => {
-        const selection = window.getSelection();
-        if (selection && selection.toString().length > 2000 && selection.toString().includes('anti-view-source')) {
-            e.preventDefault();
-            showSecureToast("Bulk copy restricted");
-        }
-    });
-    
-    // 11. Disable developer console via debugger statement repeatedly? (non-intrusive but adds annoyance)
-    setInterval(() => {
-        // This makes debugging harder but does not break UX - safe approach
-        debugger; // mild anti-debug, but won't break anything. Many protection scripts use.
-    }, 4000);
-    
-    // 12. Override certain DOM getters to prevent dumping (basic)
-    Object.defineProperty(document, 'documentElement', {
-        configurable: false,
-        get: function() { return document.documentElement; }
-    });
-    
-    // 13. Block right click on images and other elements that could leak path
-    const elementsToProtect = document.querySelectorAll('img, iframe');
-    elementsToProtect.forEach(el => {
-        el.addEventListener('contextmenu', (e) => e.preventDefault());
-    });
-    
-    function showSecureToast(msg) {
-        const toast = document.getElementById('toast');
-        if (toast) {
-            toast.textContent = `🛡️ ${msg}`;
-            toast.style.backgroundColor = '#b0003a';
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 1800);
-            setTimeout(() => { if(toast) toast.style.backgroundColor = '#2e2e32'; }, 2000);
-        }
-    }
-    
-    // Additional: Disable any shortcut for saving as HTML
-    window.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && (e.key === 'm' || e.key === 'M')) {
-            e.preventDefault();
-        }
-    });
-    
-    // Clear any iframe that might inject devtools
-    setInterval(() => {
-        const iframes = document.querySelectorAll('iframe');
-        iframes.forEach(iframe => {
-            if (iframe.src && (iframe.src.includes('devtools') || iframe.src.startsWith('javascript:'))) {
-                iframe.remove();
-            }
-        });
-    }, 2000);
-    
-    // Anti-dump: disable the ability to copy full DOM using bookmarklets
-    const origWrite = document.write;
-    document.write = function() { return; };
-    // Reload protection for view-source attempts
-    if (window.external && window.external.toString && window.external.toString().includes('view-source')) {
-        window.location.reload();
     }
 })();
 
-// ======================== ORIGINAL CORE CONVERTER FUNCTIONALITY ========================
+// ========== CORE FUNCTIONALITY ==========
 const libInput = document.getElementById('libName');
 const hexPatchInput = document.getElementById('hexPatch');
 const offsetsTextarea = document.getElementById('input');
@@ -349,120 +197,142 @@ const clearExtractBtn = document.getElementById('clearExtractBtn');
 const resultsContainer = document.getElementById('results-area');
 const globalActionsDiv = document.getElementById('globalActions');
 const toastEl = document.getElementById('toast');
-const generateButton = document.getElementById('generateBtn');
-const pasteButton = document.getElementById('pasteBtn');
-const copyAllButton = document.getElementById('copyAllBtn');
-const saveAllButton = document.getElementById('saveAllBtn');
+const generateBtn = document.getElementById('generateBtn');
+const pasteBtn = document.getElementById('pasteBtn');
+const copyAllBtn = document.getElementById('copyAllBtn');
+const saveAllBtn = document.getElementById('saveAllBtn');
 let masterFullOutput = "";
 
-function showToast(message, isError = false) {
-    toastEl.textContent = message;
-    toastEl.style.backgroundColor = isError ? '#b0003a' : '#2e2e32';
+function showToast(msg, isErr = false) {
+    toastEl.textContent = msg;
+    toastEl.style.backgroundColor = isErr ? '#b0003a' : '#2e2e32';
     toastEl.classList.add('show');
-    setTimeout(() => toastEl.classList.remove('show'), 2800);
+    setTimeout(() => toastEl.classList.remove('show'), 2500);
 }
-function normalizeOffset(offsetStr) { let clean = offsetStr.toString().replace(/^0x/i, '').toUpperCase(); return `0x${clean}`; }
-function accurateExtractOffsets(text) {
-    const offsetsSet = new Set();
+
+function parseOffsets(raw) {
+    const lines = raw.split(/\r?\n/);
+    const offsets = [];
+    for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+        let hex = line.replace(/^0x/i, '');
+        if (/^[0-9A-Fa-f]+$/.test(hex) && hex.length <= 8) {
+            let num = parseInt(hex, 16);
+            if (!isNaN(num)) offsets.push(num);
+        }
+    }
+    return [...new Set(offsets)].sort((a,b) => a-b);
+}
+
+function extractOffsetsFromCode(text) {
+    const set = new Set();
     const patterns = [
-        /MemoryPatch::createWithHex\s*\(\s*"[^"]*"\s*,\s*(0x[0-9A-Fa-f]+)\s*,/gi,
-        /HexPatches\.MemoryPatch\s*\(\s*"[^"]*"\s*,\s*(0x[0-9A-Fa-f]+)\s*,/gi,
+        /(?:HexPatches\.MemoryPatch|MemoryPatch::createWithHex)\s*\(\s*"[^"]*"\s*,\s*(0x[0-9A-Fa-f]+)/gi,
         /HOOK_LIB\s*\(\s*"[^"]*"\s*,\s*"(0x[0-9A-Fa-f]+)"/gi,
         /EncOff\s*\(\s*(0x[0-9A-Fa-f]+)/gi,
-        /(?:Tools::Hook|DobbyHook)\s*\([^,]*,\s*(0x[0-9A-Fa-f]+)/gi,
-        /HexPatches\.MemoryPatch\s*\(\s*"[^"]*"\s*,\s*(0x[0-9A-Fa-f]+)/gi
+        /0x([0-9A-Fa-f]{3,8})\b/gi
     ];
-    for (const pattern of patterns) { let match; while ((match = pattern.exec(text)) !== null) offsetsSet.add(normalizeOffset(match[1])); }
-    const standaloneHex = /\b(0x[0-9A-Fa-f]{3,8})\b/gi; let match;
-    while ((match = standaloneHex.exec(text)) !== null) {
-        const offset = normalizeOffset(match[1]); const beforePos = Math.max(0, match.index - 50); const afterPos = Math.min(text.length, match.index + offset.length + 50);
-        const context = text.substring(beforePos, afterPos);
-        if (context.includes('"') && context.indexOf(offset) > context.indexOf('"') && context.indexOf(offset) < context.lastIndexOf('"')) continue;
-        const hexValue = offset.replace('0x', ''); if (hexValue.length >= 3 && hexValue.length <= 8) offsetsSet.add(offset);
+    for (let pattern of patterns) {
+        let m;
+        while ((m = pattern.exec(text)) !== null) {
+            let offset = m[1].toUpperCase();
+            if (!offset.startsWith('0x')) offset = '0x' + offset;
+            set.add(offset);
+        }
     }
-    return Array.from(offsetsSet).sort((a,b) => parseInt(a,16)-parseInt(b,16));
+    return Array.from(set).sort((a,b) => parseInt(a,16) - parseInt(b,16));
 }
-function normalizeExistingOffsets() {
-    const currentText = offsetsTextarea.value.trim(); if(!currentText) return [];
-    const lines = currentText.split(/\r?\n/); const unique = new Set();
-    for(let line of lines) { line = line.trim(); if(!line) continue; let hexStr = line.replace(/^0x/i,'').toUpperCase(); if(/^[0-9A-F]+$/.test(hexStr) && hexStr.length<=8 && hexStr.length>=1) unique.add(`0x${hexStr}`); }
-    return Array.from(unique).sort((a,b)=>parseInt(a,16)-parseInt(b,16));
-}
-function updateOffsetsTextarea(offsetsArray) { offsetsTextarea.value = offsetsArray.length ? offsetsArray.join('\n') : ""; }
-function extractAndAddOffsets() {
-    const extractText = extractInput.value; if(!extractText.trim()) { showToast("Please paste code with offsets first", true); return; }
-    const extractedOffsets = accurateExtractOffsets(extractText); if(extractedOffsets.length===0) { showToast("No valid offsets found", true); return; }
-    const existingOffsets = normalizeExistingOffsets(); const allOffsetsSet = new Set([...existingOffsets, ...extractedOffsets]);
-    const sortedOffsets = Array.from(allOffsetsSet).sort((a,b)=>parseInt(a,16)-parseInt(b,16)); updateOffsetsTextarea(sortedOffsets);
-    const newCount = extractedOffsets.filter(o=>!existingOffsets.includes(o)).length; showToast(`Extracted ${extractedOffsets.length} offset(s). Added ${newCount} new. Total: ${sortedOffsets.length} unique offsets.`, false);
-}
-function clearExtractField() { extractInput.value = ""; showToast("Extract field cleared", false); }
-function parseOffsets(rawText) {
-    const lines = rawText.split(/\r?\n/); const offsets = [];
-    for(let line of lines) { line = line.trim(); if(!line) continue; let hexStr = line.replace(/^0x/i,''); if(/^[0-9A-Fa-f]+$/.test(hexStr)) { const num = parseInt(hexStr,16); if(!isNaN(num) && isFinite(num) && hexStr.length<=8) offsets.push(num); } }
-    return [...new Set(offsets)];
-}
-function generateEncOff(offsets) { let result = "/* EncOff Format */\n"; offsets.forEach(o=> result+=`EncOff(0x${o.toString(16).toUpperCase()}),\n`); return result.trim(); }
-function generateBypassOffsets(offsets) { let result = "/* Bypass Offsets */\n"; offsets.forEach((o,i)=> result+=`inline uintptr_t bypass${i+1}=0x${o.toString(16).toUpperCase()};\n`); return result.trim(); }
-function generateDirectPatch(offsets, lib, patch) { let result = "/* Direct Memory Patch */\n"; offsets.forEach(o=> result+=`MemoryPatch::createWithHex("${lib}",0x${o.toString(16).toUpperCase()},"${patch.replace(/ /g,'')}").Modify();\n`); return result.trim(); }
-function generateArmFalsePatch(offsets, lib) { let result = "/* ArmFalse Patch */\n"; offsets.forEach((o,i)=> result+=`MemoryPatch::createWithHex(OBFUSCATE("${lib}"),bypass${i+1},armFalse).Modify();\n`); return result.trim(); }
-function generateToolsHook(offsets, lib) { let result = "/* Tools::Hook */\n"; offsets.forEach(o=> result+=`Tools::Hook((void*)getAbsoluteAddress(OBFUSCATE("${lib}"),0x${o.toString(16).toUpperCase()}),(void*)hook_bypass,(void**)&orig_bypass);\n`); return result.trim(); }
-function generateDobbyHook(offsets, lib) { let result = "/* DobbyHook */\n"; offsets.forEach(o=> result+=`DobbyHook((void*)getAbsoluteAddress(OBFUSCATE("${lib}"),0x${o.toString(16).toUpperCase()}),(void*)hook_bypass,(void**)&orig_bypass);\n`); return result.trim(); }
-function generateHookLibFormat(offsets, lib) { let result = "/* HOOK_LIB */\n"; offsets.forEach(o=> result+=`HOOK_LIB("${lib}","0x${o.toString(16).toUpperCase()}",h_disabled,o_disabled);\n`); return result.trim(); }
-function generateHexPatchInjector(offsets, lib, patch) { let result = "/* HexPatch Injector */\n"; let pfx = patch.trim(); if(!pfx.startsWith('h')) pfx='h'+pfx; offsets.forEach(o=> result+=`HexPatches.MemoryPatch("${lib}",0x${o.toString(16).toUpperCase()},"${pfx}",32);\n`); return result.trim(); }
 
-const formatList = [
-    { id:"encoff", title:"EncOff Format", ext:"txt", generator:(o,l,p)=>generateEncOff(o) },
-    { id:"bypass_offsets", title:"Bypass Offsets (C++)", ext:"cpp", generator:(o,l,p)=>generateBypassOffsets(o) },
-    { id:"direct_patch", title:"Direct Memory Patch", ext:"cpp", generator:(o,l,p)=>generateDirectPatch(o,l,p) },
-    { id:"armfalse_patch", title:"ArmFalse Patch", ext:"cpp", generator:(o,l,p)=>generateArmFalsePatch(o,l) },
-    { id:"tools_hook", title:"Tools::Hook Calls", ext:"cpp", generator:(o,l,p)=>generateToolsHook(o,l) },
-    { id:"dobby_hook", title:"Dobby Hook Calls", ext:"cpp", generator:(o,l,p)=>generateDobbyHook(o,l) },
-    { id:"hook_lib", title:"Hook Lib Format", ext:"cpp", generator:(o,l,p)=>generateHookLibFormat(o,l) },
-    { id:"hexpatch_injector", title:"HexPatch (Injector LUA)", ext:"lua", generator:(o,l,p)=>generateHexPatchInjector(o,l,p) }
+function extractAndAdd() {
+    let code = extractInput.value;
+    if (!code.trim()) { showToast("Paste code first", true); return; }
+    let extracted = extractOffsetsFromCode(code);
+    if (extracted.length === 0) { showToast("No offsets found", true); return; }
+    let existing = parseOffsets(offsetsTextarea.value).map(o => '0x' + o.toString(16).toUpperCase());
+    let all = new Set([...existing, ...extracted]);
+    offsetsTextarea.value = Array.from(all).sort((a,b) => parseInt(a,16)-parseInt(b,16)).join('\n');
+    showToast(`Extracted ${extracted.length} offsets`, false);
+}
+
+function clearExtract() { extractInput.value = ""; showToast("Cleared", false); }
+
+function generateEncOff(offsets) { return offsets.map(o => `EncOff(0x${o.toString(16).toUpperCase()}),`).join('\n'); }
+function generateBypass(offsets) { return offsets.map((o,i) => `inline uintptr_t bypass${i+1} = 0x${o.toString(16).toUpperCase()};`).join('\n'); }
+function generateDirect(offsets, lib, patch) { return offsets.map(o => `MemoryPatch::createWithHex("${lib}", 0x${o.toString(16).toUpperCase()}, "${patch.replace(/ /g,'')}").Modify();`).join('\n'); }
+function generateArmFalse(offsets, lib) { return offsets.map((o,i) => `MemoryPatch::createWithHex(OBFUSCATE("${lib}"), bypass${i+1}, armFalse).Modify();`).join('\n'); }
+function generateToolsHook(offsets, lib) { return offsets.map(o => `Tools::Hook((void*)getAbsoluteAddress(OBFUSCATE("${lib}"), 0x${o.toString(16).toUpperCase()}), (void*)hook_bypass, (void**)&orig_bypass);`).join('\n'); }
+function generateDobby(offsets, lib) { return offsets.map(o => `DobbyHook((void*)getAbsoluteAddress(OBFUSCATE("${lib}"), 0x${o.toString(16).toUpperCase()}), (void*)hook_bypass, (void**)&orig_bypass);`).join('\n'); }
+function generateHookLib(offsets, lib) { return offsets.map(o => `HOOK_LIB("${lib}", "0x${o.toString(16).toUpperCase()}", h_disabled, o_disabled);`).join('\n'); }
+function generateHexInjector(offsets, lib, patch) { let p = patch.trim(); if(!p.startsWith('h')) p='h'+p; return offsets.map(o => `HexPatches.MemoryPatch("${lib}", 0x${o.toString(16).toUpperCase()}, "${p}", 32);`).join('\n'); }
+
+const formats = [
+    { name:"EncOff Format", ext:"txt", gen:(o,l,p)=>generateEncOff(o) },
+    { name:"Bypass Offsets (C++)", ext:"cpp", gen:(o,l,p)=>generateBypass(o) },
+    { name:"Direct Memory Patch", ext:"cpp", gen:(o,l,p)=>generateDirect(o,l,p) },
+    { name:"ArmFalse Patch", ext:"cpp", gen:(o,l,p)=>generateArmFalse(o,l) },
+    { name:"Tools::Hook Calls", ext:"cpp", gen:(o,l,p)=>generateToolsHook(o,l) },
+    { name:"Dobby Hook Calls", ext:"cpp", gen:(o,l,p)=>generateDobby(o,l) },
+    { name:"Hook Lib Format", ext:"cpp", gen:(o,l,p)=>generateHookLib(o,l) },
+    { name:"HexPatch Injector", ext:"lua", gen:(o,l,p)=>generateHexInjector(o,l,p) }
 ];
 
-function generateAllFormats() {
-    const libName = libInput.value.trim(); if(!libName) { showToast("Library name cannot be empty!", true); return; }
-    const hexPatchRaw = hexPatchInput.value.trim(); let patchValue = hexPatchRaw || "00 00 80 D2 C0 03 5F D6";
-    const offsetRawText = offsetsTextarea.value; if(!offsetRawText.trim()) { showToast("Please enter at least one offset address.", true); return; }
-    const offsets = parseOffsets(offsetRawText); if(offsets.length===0) { showToast("No valid hex offsets found!", true); return; }
-    showToast(`Parsed ${offsets.length} unique offset(s). Generating...`, false);
-    resultsContainer.innerHTML = ""; resultsContainer.classList.remove("active"); globalActionsDiv.classList.remove("visible");
-    let combinedOutput = "// Bread Bypass Generator //\n";
-    for(const fmt of formatList) {
-        let generated = fmt.generator(offsets, libName, patchValue) || `// error ${fmt.title}`;
-        combinedOutput += `// ---- ${fmt.title} ----\n${generated}\n\n`;
-        const card = document.createElement('div'); card.className='result-card';
-        const headerDiv = document.createElement('div'); headerDiv.className='result-header';
-        const titleSpan = document.createElement('span'); titleSpan.className='result-title'; titleSpan.textContent=fmt.title;
-        const badgeSpan = document.createElement('span'); badgeSpan.style.fontSize="10px"; badgeSpan.style.opacity="0.7"; badgeSpan.textContent=`.${fmt.ext}`;
-        headerDiv.appendChild(titleSpan); headerDiv.appendChild(badgeSpan);
-        const previewDiv = document.createElement('div'); previewDiv.className='code-preview'; previewDiv.textContent=generated;
-        const hiddenStore = document.createElement('textarea'); hiddenStore.className='hidden'; hiddenStore.value=generated;
-        const actionsDiv = document.createElement('div'); actionsDiv.className='result-actions';
-        const copyBtn = document.createElement('button'); copyBtn.className='btn-tonal'; copyBtn.textContent='Copy';
-        copyBtn.onclick=()=>{ navigator.clipboard.writeText(generated).then(()=>showToast(`Copied ${fmt.title}`)).catch(()=>showToast("Copy failed",true)); };
-        const saveBtn = document.createElement('button'); saveBtn.className='btn-tonal'; saveBtn.textContent=`Save .${fmt.ext}`;
-        saveBtn.onclick=()=>{ downloadBlob(hiddenStore.value,`${fmt.id}_${Date.now()}.${fmt.ext}`); showToast(`Saved ${fmt.id}`); };
-        actionsDiv.appendChild(copyBtn); actionsDiv.appendChild(saveBtn);
-        card.appendChild(headerDiv); card.appendChild(previewDiv); card.appendChild(hiddenStore); card.appendChild(actionsDiv);
+function generateAll() {
+    let lib = libInput.value.trim();
+    if (!lib) { showToast("Library name required", true); return; }
+    let patch = hexPatchInput.value.trim() || "00 00 80 D2 C0 03 5F D6";
+    let offsetText = offsetsTextarea.value;
+    if (!offsetText.trim()) { showToast("Enter offsets", true); return; }
+    let offsets = parseOffsets(offsetText);
+    if (offsets.length === 0) { showToast("Invalid offsets", true); return; }
+    
+    resultsContainer.innerHTML = "";
+    resultsContainer.classList.remove("active");
+    globalActionsDiv.classList.remove("visible");
+    
+    let combined = `// Bread Bypass Generator\n// Library: ${lib} | Offsets: ${offsets.length}\n\n`;
+    
+    for (let fmt of formats) {
+        let content = fmt.gen(offsets, lib, patch);
+        combined += `// ===== ${fmt.name} =====\n${content}\n\n`;
+        
+        let card = document.createElement('div');
+        card.className = 'result-card';
+        card.innerHTML = `
+            <div class="result-header"><span class="result-title">${fmt.name}</span><span style="font-size:10px;opacity:0.7">.${fmt.ext}</span></div>
+            <div class="code-preview">${escapeHtml(content)}</div>
+            <div class="result-actions">
+                <button class="btn-tonal copy-single">Copy</button>
+                <button class="btn-tonal save-single">Save .${fmt.ext}</button>
+            </div>
+        `;
+        let copyBtn = card.querySelector('.copy-single');
+        let saveBtn = card.querySelector('.save-single');
+        copyBtn.onclick = () => { navigator.clipboard.writeText(content).then(()=>showToast(`Copied ${fmt.name}`)).catch(()=>showToast("Failed",true)); };
+        saveBtn.onclick = () => { download(content, `${fmt.name.replace(/ /g,'_')}_${Date.now()}.${fmt.ext}`); showToast(`Saved`); };
         resultsContainer.appendChild(card);
     }
-    masterFullOutput = combinedOutput; resultsContainer.classList.add('active'); globalActionsDiv.classList.add('visible');
-    showToast(`Success! ${offsets.length} offsets → ${formatList.length} formats`, false);
+    
+    masterFullOutput = combined;
+    resultsContainer.classList.add('active');
+    globalActionsDiv.classList.add('visible');
+    showToast(`Generated ${offsets.length} offsets → ${formats.length} formats`);
 }
-function downloadBlob(content,filename){ const blob = new Blob([content],{type:"text/plain"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); }
-function copyAllOutput(){ if(!masterFullOutput){ showToast("Generate first",true); return; } navigator.clipboard.writeText(masterFullOutput).then(()=>showToast("All formats copied")).catch(()=>showToast("Copy failed",true)); }
-function saveAllOutput(){ if(!masterFullOutput){ showToast("No output",true); return; } downloadBlob(masterFullOutput,`Bread_Bypass_All_${Date.now()}.txt`); showToast("Saved all formats"); }
-async function pasteFromClipboard(){ try{ const text=await navigator.clipboard.readText(); offsetsTextarea.value=text; showToast("Pasted!"); }catch(e){ showToast("Clipboard error",true); } }
-generateButton.addEventListener('click', generateAllFormats);
-pasteButton.addEventListener('click', pasteFromClipboard);
-copyAllButton.addEventListener('click', copyAllOutput);
-saveAllButton.addEventListener('click', saveAllOutput);
-extractBtn.addEventListener('click', extractAndAddOffsets);
-clearExtractBtn.addEventListener('click', clearExtractField);
-window.addEventListener('DOMContentLoaded', () => { showToast("🔒 Fully Protected Mode - View Source Blocked", false); });
+
+function escapeHtml(str) { return str.replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
+function download(content, filename) { let blob = new Blob([content], {type:"text/plain"}); let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href); }
+function copyAll() { if(!masterFullOutput) { showToast("Generate first", true); return; } navigator.clipboard.writeText(masterFullOutput).then(()=>showToast("All formats copied")).catch(()=>showToast("Failed",true)); }
+function saveAll() { if(!masterFullOutput) { showToast("Generate first", true); return; } download(masterFullOutput, `Bread_Bypass_All_${Date.now()}.txt`); showToast("Saved all"); }
+async function pasteClipboard() { try { let text = await navigator.clipboard.readText(); offsetsTextarea.value = text; showToast("Pasted"); } catch(e) { showToast("Clipboard permission needed", true); } }
+
+generateBtn.addEventListener('click', generateAll);
+pasteBtn.addEventListener('click', pasteClipboard);
+copyAllBtn.addEventListener('click', copyAll);
+saveAllBtn.addEventListener('click', saveAll);
+extractBtn.addEventListener('click', extractAndAdd);
+clearExtractBtn.addEventListener('click', clearExtract);
+
+showToast("🔒 Secure mode - View source blocked", false);
 </script>
 </body>
 </html>
