@@ -72,7 +72,7 @@
 </head>
 <body>
 <div class="app-container">
-    <header><h1>🍞 Bread Bypass Formatting Tool</h1><div class="subtitle">Made by BreadOnTop • Secured</div></header>
+    <header><h1>Bread Bypass Formatting Tool</h1><div class="subtitle">Made by BreadOnTop • Secured</div></header>
     <section class="card">
         <div class="input-grid">
             <div class="form-group"><label>Library / Module</label><input type="text" id="libName" value="libanogs.so"></div>
@@ -81,13 +81,13 @@
     </section>
     <section class="card">
         <div class="form-group"><label>Offsets (One per line)</label><textarea id="input" placeholder="0x202894&#10;0x20F7BC&#10;0x210004"></textarea><div class="hint">Unique offsets only, 0x format.</div></div>
-        <div class="extract-bar"><span>📌 Extract Offsets From Any Format</span></div>
+        <div class="extract-bar"><span>Extract Offsets From Any Format</span></div>
         <div class="form-group" style="margin-top:12px"><label>Paste MemoryPatch/HexPatches lines</label><textarea id="extractInput" placeholder="HexPatches.MemoryPatch(&quot;libanogs.so&quot;, 0x202894, &quot;h00 00 80 D2 C0 03 5F D6&quot;, 32);" style="min-height:100px"></textarea>
             <div class="btn-container"><button class="btn-secondary" id="extractBtn">Extract Offsets</button><button class="btn-tonal" id="clearExtractBtn">Clear</button></div>
         </div>
         <div class="btn-container"><button class="btn-tonal btn-icon-only" id="pasteBtn">📋</button><button class="btn-primary" id="generateBtn">Generate All Formats</button></div>
     </section>
-    <div class="global-bar" id="globalActions"><span>✅ All formats ready</span><div class="btn-container"><button class="btn-tonal" id="copyAllBtn">Copy All</button><button class="btn-tonal" id="saveAllBtn">Save All</button></div></div>
+    <div class="global-bar" id="globalActions"><span>All formats ready</span><div class="btn-container"><button class="btn-tonal" id="copyAllBtn">Copy All</button><button class="btn-tonal" id="saveAllBtn">Save All</button></div></div>
     <div id="results-area"></div>
 </div>
 <div id="toast" class="toast">Ready</div>
@@ -144,7 +144,7 @@
         if (widthDiff || heightDiff) {
             if (!devtoolsOpen) {
                 devtoolsOpen = true;
-                showSecureMsg("⚠️ DevTools detected!");
+                showSecureMsg("DevTools detected!");
             }
         } else { devtoolsOpen = false; }
     }, 1500);
@@ -178,7 +178,7 @@
     function showSecureMsg(msg) {
         const t = document.getElementById('toast');
         if (t) {
-            t.textContent = `🔒 ${msg}`;
+            t.textContent = `${msg}`;
             t.style.backgroundColor = '#b0003a';
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 1800);
